@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MonoGameContentReference Include="**\*.mgcb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder" Version="3.7.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RelaUI.Basics\RelaUI.Basics.csproj" />
+    <ProjectReference Include="..\RelaUI.Console\RelaUI.Console.csproj" />
+    <ProjectReference Include="..\RelaUI.Input\RelaUI.Input.csproj" />
+    <ProjectReference Include="..\RelaUI.Profiles\RelaUI.Profiles.csproj" />
+    <ProjectReference Include="..\RelaUI.Utilities\RelaUI.Utilities.csproj" />
+    <ProjectReference Include="..\RelaUI\RelaUI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>..\ExternalDLLs\MonoGame.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="SpriteFontPlus">
+      <HintPath>..\ExternalDLLs\SpriteFontPlus.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="&#xD;&#xA;copy /Y &quot;$(SolutionDir)ExternalDLLs\libopenal.1.dylib&quot; &quot;$(TargetDir)libopenal.1.dylib&quot;&#xD;&#xA;copy /Y &quot;$(SolutionDir)ExternalDLLs\libSDL2-2.0.0.dylib&quot; &quot;$(TargetDir)libSDL2-2.0.0.dylib&quot;&#xD;&#xA;&#xD;&#xA;xcopy &quot;$(SolutionDir)ExternalDLLs\x86&quot; &quot;$(TargetDir)x86&quot; /e /y /i /r&#xD;&#xA;xcopy &quot;$(SolutionDir)ExternalDLLs\x64&quot; &quot;$(TargetDir)x64&quot; /e /y /i /r" />
+  </Target>
+
+</Project>

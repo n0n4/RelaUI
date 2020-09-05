@@ -1,0 +1,1619 @@
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using RelaUI.DrawHandles;
+using RelaUI.Input;
+using RelaUI.Input.Clipboards;
+using RelaUI.Text;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using RelaUI.Utilities;
+
+namespace RelaUI.Components
+{
+    public class UITextField : UIComponent
+    {
+        public int Width = 100;
+        public int Height = 25;
+        public bool AutoHeight = true;
+
+        public bool HasBackground = true;
+        public Color BackgroundColor;
+        public bool HasBorder = true;
+        public Color BorderColor;
+        public int BorderWidth;
+
+        public int ScrollSize = 10; // width of the scroll bar
+        public Color ScrollBarBackgroundColor;
+        public Color ScrollBarColor;
+        private bool WasScrollingVert = false;
+        private bool WasScrollingHorz = false;
+
+        public string PlaceholderText = string.Empty;
+        public Color PlaceholderColor;
+
+        public int CaretLine = 0;
+        public int CaretPosition = 0;
+        private bool CaretBlinking = false;
+        private double CaretBlinkTimer = 0;
+        public double CaretBlinkTimerMax = 0.5;
+        public double CaretBlinkTimerVanishMax = 0.5;
+
+        private int LastTStart = 0; // for a single line textfield, what index is currently '0'?
+        // (when a textfield scrolls, it is only displaying a substring of the text at once)
+        private int LastTEnd = 0;
+        private int TStartAtStartOfScrolling = -1;
+        private int TEndAtStartOfScrolling = -1;
+
+        private bool MouseWasDown = false;
+        private bool Highlighting = false;
+        private int HighlightStartLine = 0;
+        private int HighlightEndLine = 0;
+        private int HighlightStartPos = 0;
+        private int HighlightEndPos = 0;
+        public Color HighlightColor;
+
+        // for multiline: these are used to track what lines are visible and what
+        // their horizontal offset is
+        private float WindowX = 0;
+        private float WindowY = 0;
+
+        private List<string> TextLines = new List<string>() { "" }; // only for multiline
+        private string TextField = string.Empty;
+        public string Text
+        {
+            get
+            {
+                if (!MultiLine)
+                {
+                    return TextField;
+                }
+                else
+                {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < TextLines.Count; i++)
+                    {
+                        sb.AppendLine(TextLines[i]);
+                    }
+                    return sb.ToString();
+                }
+            }
+            private set
+            {
+                if (!MultiLine)
+                {
+                    TextField = value;
+                }
+                else
+                {
+                    TextLines = value.SplitByLines();
+                }
+            }
+        }
+        // NOTE: to update font, updating above will not auto-update the font
+        // you must re-init the label or do SFont = FontManager.ResolveFont(Font, FontSize)
+        public Color TextColor;
+        public RelaFont SFont;
+        public TextSettings FontSettings = new TextSettings();
+
+        private ITextStyler TextStyler = null;
+        private List<TextStyles> ComputedStyles = new List<TextStyles>();
+        private bool SkipNextCompute = false;
+
+        public bool MultiLine = false;
+
+        private float Lastdx = 0; // need to store these for GetFocus
+        private float Lastdy = 0;
+
+        public UITextField(float x, float y, int w, int h, string text, string font = "", int? fontsize = null,
+            bool autoheight = true, string placeholdertext = "")
+        {
+            this.x = x;
+            this.y = y;
+            Width = w;
+            Height = h;
+            Text = text;
+            FontSettings.FontName = font;
+            FontSettings.FontSize = fontsize != null ? (int)fontsize : 0;
+
+            PlaceholderText = placeholdertext;
+
+            // need to change these for width/height preferences to be actually used
+            AutoHeight = autoheight;
+
+            ComputeStyles();
+        }
+
+        protected override void SelfInit()
+        {
+            FontSettings.Color = Style.ForegroundColor;
+            BackgroundColor = Style.BackgroundColor;
+            BorderColor = Style.BackgroundAccent;
+            BorderWidth = Style.BorderWidth;
+
+            ScrollBarColor = Style.ForegroundColor;
+            ScrollBarBackgroundColor = Style.BackgroundAccent;
+
+            HighlightColor = Style.BackgroundAccent;
+
+            PlaceholderColor = Style.SecondaryTextColor;
+
+            SFont = FontSettings.Init(Style);
+            TextColor = FontSettings.Color;
+
+            if (AutoHeight)
+            {
+                Height = (HasBorder ? BorderWidth * 2 : 1) + 8 + SFont.LineSpacing;
+            }
+
+            ComputeStyles();
+        }
+
+        public override int GetWidth()
+        {
+            return Width;
+        }
+
+        public override int GetHeight()
+        {
+            return Height;
+        }
+
+        protected override void SelfRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)
+        {
+            Lastdx = dx;
+            Lastdy = dy;
+
+            bool hovering = Hovering(dx, dy, input);
+            if (hovering)
+            {
+                input.Cursor.TrySet(eCursorState.CLICKABLE);
+            }
+
+            if (HasBackground)
+                Draw.DrawRectangleHandle(sb, (int)dx, (int)dy, Width, Height, BackgroundColor);
+            if (HasBorder)
+                Draw.DrawRectangleHandleOutline(sb, (int)dx, (int)dy, Width, Height, BorderColor, BorderWidth);
+
+            int textheight = SFont.LineSpacing;
+            int diff = Height - textheight;
+            int mod = 0;
+            if (diff > 0)
+            {
+                mod = diff / 2;
+            }
+            if (MultiLine)
+            {
+                mod = BorderWidth;
+            }
+            if (string.IsNullOrEmpty(Text))
+            {
+                FontSettings.Color = PlaceholderColor;
+                if (!Focused)
+                {
+                    Draw.DrawText(g, sb, SFont, dx + BorderWidth + 2, dy + mod, PlaceholderText, FontSettings);
+                }
+                else
+                {
+                    CaretBlinkTimer += elapsedms/1000.0f;
+                    if (!CaretBlinking && CaretBlinkTimer >= CaretBlinkTimerMax)
+                    {
+                        CaretBlinkTimer = 0;
+                        CaretBlinking = true;
+                    }
+                    else if (CaretBlinking && CaretBlinkTimer >= CaretBlinkTimerVanishMax)
+                    {
+                        CaretBlinkTimer = 0;
+                        CaretBlinking = false;
+                    }
+
+                    if (!CaretBlinking)
+                    {
+                        Draw.DrawRectangleHandle(sb, (int)(dx + BorderWidth + 2), (int)(dy + mod), 2, SFont.LineSpacing, TextColor);
+                    }
+                }
+            }
+            else
+            {
+                // only render the caret if this is active
+                bool doCaret = false;
+                if (Focused)
+                {
+                    CaretBlinkTimer += elapsedms/1000.0f;
+                    if (!CaretBlinking && CaretBlinkTimer >= CaretBlinkTimerMax)
+                    {
+                        CaretBlinkTimer = 0;
+                        CaretBlinking = true;
+                    }
+                    else if (CaretBlinking && CaretBlinkTimer >= CaretBlinkTimerVanishMax)
+                    {
+                        CaretBlinkTimer = 0;
+                        CaretBlinking = false;
+                    }
+
+                    if (!CaretBlinking)
+                        doCaret = true;
+                }
+
+                FontSettings.Color = TextColor;
+                int tstart = 0;
+                int tend = 0;
+                if (!MultiLine)
+                {
+                    string comparetext = Text;
+
+                    int textwidth = TextHelper.GetWidthMultiStyles(SFont, comparetext, ComputedStyles[0]);
+                    int maxwidth = Width - (HasBorder ? BorderWidth * 2 : 0) - 4;
+                    tend = comparetext.Length;
+                    if (textwidth > maxwidth)
+                    {
+                        int wperc = textwidth / comparetext.Length;
+                        int cs = maxwidth / wperc;
+                        int postcaretcs = comparetext.Length - CaretPosition;
+                        int precaretcs = CaretPosition;
+                        if (postcaretcs < cs)
+                        {
+                            tstart = CaretPosition - (cs - postcaretcs);
+                            if (tstart + 3 > CaretPosition)
+                            {
+                                tstart = CaretPosition - 3;
+                                tend = CaretPosition + (cs - 3);
+                            }
+                        }
+                        else if (CaretPosition < 3)
+                        {
+                            tstart = 0;
+                            tend = cs;
+                        }
+                        else
+                        {
+                            tstart = CaretPosition - 3;
+                            tend = CaretPosition + (cs - 3);
+                        }
+
+                        if (tstart < 0)
+                        {
+                            tstart = 0;
+                        }
+
+                        while ((tend - tstart > 0) 
+                            && TextHelper.GetWidthMultiStyles(SFont, comparetext.Substring(tstart, tend - tstart), ComputedStyles[0]) > maxwidth)
+                        {
+                            if (postcaretcs < cs)
+                            {
+                                tstart++;
+                            }
+                            else
+                            {
+                                tend--;
+                            }
+                        }
+                    }
+
+                    // special override: if user is currently scrolling with the mouse
+                    // do not move the sliding window until they stop scrolling
+                    if (TStartAtStartOfScrolling != -1)
+                    {
+                        tstart = TStartAtStartOfScrolling;
+                        tend = TEndAtStartOfScrolling;
+                    }
+
+                    TextStyles adjustedStyles = ComputedStyles[0].Adjust(tstart);
+
+                    if (Highlighting)
+                    {
+                        // draw highlight background first
+                        int h1pos;
+                        int h2pos;
+                        // user could drag backwards, so we need to sort the highlight positions
+                        if (HighlightStartPos <= HighlightEndPos)
+                        {
+                            h1pos = HighlightStartPos;
+                            h2pos = HighlightEndPos;
+                        }
+                        else
+                        {
+                            h2pos = HighlightStartPos;
+                            h1pos = HighlightEndPos;
+                        }
+
+                        if (h1pos != h2pos && h2pos > tstart && h1pos < tend)
+                        {
+                            if (h1pos < tstart) h1pos = tstart;
+                            if (h2pos > tend) h2pos = tend;
+
+                            int hstartx = 0;
+                            if (h1pos != tstart)
+                                hstartx = TextHelper.GetWidthMultiStyles(SFont, Text.Substring(tstart, h1pos - tstart), adjustedStyles);
+                            int hendx = TextHelper.GetWidthMultiStyles(SFont, Text.Substring(tstart, h2pos - tstart), adjustedStyles);
+
+                            Draw.DrawRectangleHandle(sb,
+                                (int)(dx + BorderWidth + 2 + hstartx),
+                                (int)(dy + mod),
+                                hendx - hstartx,
+                                textheight,
+                                HighlightColor);
+                        }
+                    }
+
+                    LastTStart = tstart;
+                    LastTEnd = tend;
+                    Draw.DrawTextMultiStyles(g, sb, SFont, dx + BorderWidth + 2, dy + mod, Text.Substring(tstart, tend - tstart), adjustedStyles);
+
+                    if (doCaret)
+                    {
+                        float caretx = 0;
+                        if (CaretPosition - tstart > 0)
+                        {
+                            caretx = TextHelper.GetWidthMultiStyles(SFont, Text.Substring(tstart, CaretPosition - tstart), ComputedStyles[0]);//SFont.MeasureString(Text.Substring(tstart, CaretPosition - tstart)).X;
+                        }
+                        Draw.DrawRectangleHandle(sb, (int)(dx + BorderWidth + 2 + caretx), (int)(dy + mod), 2, SFont.LineSpacing, TextColor);
+                    }
+                }
+                else
+                {
+                    Rectangle oldrect = RenderTargetScope.Open(sb, (int)Math.Floor(dx + BorderWidth), (int)Math.Floor(dy + BorderWidth), Width - BorderWidth * 2, Height - BorderWidth * 2);
+                    {
+                        if (Highlighting)
+                        {
+                            // draw highlight background first
+                            // user could drag backwards, so we need to sort the highlight positions
+                            OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos);
+
+                            for (int i = h1line; i <= h2line; i++)
+                            {
+                                string htext = TextLines[i];
+                                int hstart = 0;
+                                int hend = htext.Length;
+                                if (i == h1line) hstart = h1pos;
+                                if (i == h2line) hend = h2pos;
+
+                                if (hstart == hend)
+                                    continue;
+
+                                int hstartx = 0;
+                                if (hstart != 0)
+                                    hstartx = TextHelper.GetWidthMultiStyles(SFont, htext.Substring(0, hstart), ComputedStyles[i]);
+                                int hendx = TextHelper.GetWidthMultiStyles(SFont, htext.Substring(0, hend), ComputedStyles[i]);
+
+                                Draw.DrawRectangleHandle(sb,
+                                    (int)(dx + BorderWidth + 2 + hstartx - WindowX),
+                                    (int)(dy + mod + (textheight * i) - WindowY),
+                                    hendx - hstartx,
+                                    textheight,
+                                    HighlightColor);
+                            }
+                        }
+
+                        for (int i = 0; i < TextLines.Count; i++)
+                        {
+                            string line = TextLines[i];
+                            Draw.DrawTextMultiStyles(g, sb, SFont, dx + BorderWidth + 2 - WindowX, dy + mod + (textheight * i) - WindowY, line, ComputedStyles[i]);
+                        }
+
+                        if (doCaret)
+                        {
+                            float caretx = 0;
+                            float carety = textheight * CaretLine;
+                            if (CaretPosition > 0)
+                            {
+                                caretx = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                            }
+                            Draw.DrawRectangleHandle(sb, (int)(dx + BorderWidth + 2 + caretx - WindowX), (int)(dy + mod + carety - WindowY), 2, SFont.LineSpacing, TextColor);
+                        }
+                    }
+                    RenderTargetScope.Close(sb, oldrect);
+
+                    // draw scrollbars 
+                    // note that this happens outside the render scope so they're on top of things
+                    int maxwindowy = GetMaxWindowY();
+                    int maxwindowx = GetMaxWindowX();
+
+                    // draw vertical scrollbar
+                    bool hasvert = false;
+                    if (ScrollVertVisible())
+                    {
+                        hasvert = true;
+                        int sfw = ScrollSize;
+                        int sfx = (int)(dx + Width - sfw);
+                        int sfy = (int)(dy + BorderWidth);
+                        int sfh = Height - BorderWidth * 2;
+                        // draw the background
+                        Draw.DrawRectangleHandle(sb, sfx, sfy, sfw, sfh, ScrollBarBackgroundColor);
+                        // now draw the bar itself
+                        int sfbarw = GetSliderBarWidth(vert: true);
+                        int sfbarpos = (int)((sfh - sfbarw) * (WindowY / (float)maxwindowy));
+                        Draw.DrawRectangleHandle(sb, sfx, sfy + sfbarpos, sfw, sfbarw, ScrollBarColor);
+                    }
+
+                    // draw horizontal scrollbar
+                    if (ScrollHorzVisible())
+                    {
+                        int sfh = ScrollSize;
+                        int sfy = (int)(dy + Height - sfh);
+                        int sfx = (int)(dx + BorderWidth);
+                        int sfw = Width - BorderWidth * 2;
+                        if (hasvert)
+                            sfw -= ScrollSize;
+                        // draw the background
+                        Draw.DrawRectangleHandle(sb, sfx, sfy, sfw, sfh, ScrollBarBackgroundColor);
+                        // now draw the bar itself
+                        int sfbarw = GetSliderBarWidth(vert: false);
+                        int sfbarpos = (int)((sfw - sfbarw) * (WindowX / (float)maxwindowx));
+                        Draw.DrawRectangleHandle(sb, sfx + sfbarpos, sfy, sfbarw, sfh, ScrollBarColor);
+                    }
+                }
+            }
+        }
+
+        //accept input
+        private void ProcessAdd(string add, ref bool first, float elapsedMS, InputManager input)
+        {
+            if (!MultiLine)
+            {
+                if (!first)
+                {
+                    // if not our first, it means enter was pressed...
+                    EnterPressed(elapsedMS, input);
+                    return; // only handle one line
+                }
+                else
+                {
+                    first = false;
+                }
+                if (Text.Length == 0)
+                {
+                    Text = add;
+                }
+                else if (CaretPosition == Text.Length)
+                {
+                    Text = Text + add;
+                }
+                else if (CaretPosition == 0)
+                {
+                    Text = add + Text;
+                }
+                else if (CaretPosition > 0 && CaretPosition < Text.Length)
+                {
+                    Text = Text.Substring(0, CaretPosition) + add + Text.Substring(CaretPosition);
+                }
+                CaretPosition += add.Length;
+            }
+            else
+            {
+                if (!first)
+                {
+                    string curtext = TextLines[CaretLine];
+                    TextLines.Insert(CaretLine + 1, curtext.Substring(CaretPosition));
+                    TextLines[CaretLine] = curtext.Substring(0, CaretPosition);
+                    CaretLine++;
+                    CaretPosition = 0;
+                }
+                else
+                {
+                    first = false;
+                }
+                string tl = TextLines[CaretLine];
+                if (tl.Length == 0)
+                {
+                    TextLines[CaretLine] = add;
+                }
+                else if (CaretPosition == tl.Length)
+                {
+                    TextLines[CaretLine] += add;
+                }
+                else if (CaretPosition == 0)
+                {
+                    TextLines[CaretLine] = add + tl;
+                }
+                else if (CaretPosition > 0 && CaretPosition < tl.Length)
+                {
+                    TextLines[CaretLine] = tl.Substring(0, CaretPosition) + add + tl.Substring(CaretPosition);
+                }
+                CaretPosition += add.Length;
+                if (CaretPosition > TextLines[CaretLine].Length)
+                {
+                    CaretPosition = TextLines[CaretLine].Length;
+                }
+            }
+        }
+
+        private void ProcessBackspace(bool dodelete, ref bool changedLines)
+        {
+            if (!MultiLine)
+            {
+                if (Highlighting)
+                {
+                    DeleteHighlighted();
+                }
+                else if (dodelete)
+                {
+                    if (Text.Length > CaretPosition + 1)
+                    {
+                        Text = Text.Substring(0, CaretPosition) + Text.Substring(CaretPosition + 1);
+                    }
+                }
+                else
+                {
+                    if (Text.Length > 0 && CaretPosition > 0)
+                    {
+                        Text = Text.Substring(0, CaretPosition - 1) + Text.Substring(CaretPosition);
+                        CaretPosition--;
+                    }
+                }
+            }
+            else
+            {
+                if (Highlighting)
+                {
+                    // remove the selected segment
+                    DeleteHighlighted();
+                }
+                else if (dodelete)
+                {
+                    string tl = TextLines[CaretLine];
+                    if (tl.Length > CaretPosition + 1)
+                    {
+                        TextLines[CaretLine] = tl.Substring(0, CaretPosition) + tl.Substring(CaretPosition + 1);
+                    }
+                    else if (tl.Length == CaretPosition + 1)
+                    {
+                        TextLines[CaretLine] = tl.Substring(0, CaretPosition);
+                    }
+                    else
+                    {
+                        // remove the next line
+                        if (CaretLine + 1 < TextLines.Count)
+                        {
+                            int origlen = TextLines[CaretLine].Length;
+                            TextLines[CaretLine] += TextLines[CaretLine + 1];
+                            TextLines.RemoveAt(CaretLine + 1);
+                            changedLines = true;
+                            CaretPosition = origlen;
+                        }
+                    }
+                }
+                else
+                {
+                    string tl = TextLines[CaretLine];
+                    if (tl.Length > 0 && CaretPosition > 0)
+                    {
+                        TextLines[CaretLine] = tl.Substring(0, CaretPosition - 1) + tl.Substring(CaretPosition);
+                        CaretPosition--;
+                    }
+                    else
+                    {
+                        // remove the new line
+                        if (CaretLine > 0)
+                        {
+                            int origlen = TextLines[CaretLine - 1].Length;
+                            TextLines[CaretLine - 1] += TextLines[CaretLine];
+                            TextLines.RemoveAt(CaretLine);
+                            CaretLine--;
+                            changedLines = true;
+                            CaretPosition = origlen;
+                        }
+                    }
+                }
+            }
+        }
+
+        private InputManager.WritingOrder[] WritingOrders = new InputManager.WritingOrder[16];
+        public override void SelfFocusedInput(float elapsedms, InputManager input)
+        {
+            bool changed = false;
+            bool changedLines = false;
+            int oldCaretPosition = CaretPosition;
+            bool skipDeleteHighlight = false;
+
+            // if multiline, handle enter
+            if (MultiLine && input.EnterFresh())
+            {
+                changedLines = true;
+            }
+
+            // handle tabs
+            if (input.TabFresh())
+            {
+                if (MultiLine && Highlighting)
+                {
+                    // special case: tab all at once
+                    if (!input.ShiftDown())
+                        TabHighlighted();
+                    else
+                        ShiftTabHighlighted();
+                }
+            }
+
+            int ordercount = input.FreshWriting(WritingOrders, true);
+
+            // handle duplicate
+            if (input.CtrlDown() && input.IsKeyFresh(Keys.D))
+            {
+                if (Highlighting)
+                {
+                    WritingOrders[ordercount] = new InputManager.WritingOrder()
+                    {
+                        Add = GetHighlightedText(),
+                        Order = InputManager.eWritingOrder.ADD
+                    };
+                    ordercount++;
+                    skipDeleteHighlight = true;
+                }
+                else if (MultiLine)
+                {
+                    WritingOrders[ordercount] = new InputManager.WritingOrder()
+                    {
+                        Add = "\n" + TextLines[CaretLine],
+                        Order = InputManager.eWritingOrder.ADD
+                    };
+                    ordercount++;
+                }
+                else
+                {
+                    WritingOrders[ordercount] = new InputManager.WritingOrder()
+                    {
+                        Add = Text,
+                        Order = InputManager.eWritingOrder.ADD
+                    };
+                    ordercount++;
+                }
+                input.CaptureInput(Keys.D);
+            }
+
+            // process the orders
+            if (ordercount > 0)
+            {
+                if (Highlighting && !skipDeleteHighlight)
+                    DeleteHighlighted();
+
+                bool first = true;
+                for (int i = 0; i < ordercount; i++)
+                {
+                    first = true;
+                    InputManager.WritingOrder order = WritingOrders[i];
+
+                    if (order.Order == InputManager.eWritingOrder.ADD)
+                    {
+                        if (order.Add.Contains("\n") || order.Add.Contains("\r"))
+                        {
+                            changed = true;
+                            List<string> adds = order.Add.SplitByLines();
+                            for (int o = 0; o < adds.Count; o++)
+                            {
+                                ProcessAdd(adds[o], ref first, elapsedms, input);
+                            }
+                        }
+                        else
+                        {
+                            changed = true;
+                            ProcessAdd(order.Add, ref first, elapsedms, input);
+                        }
+                    }
+                    else if (order.Order == InputManager.eWritingOrder.BACKSPACE)
+                    {
+                        changed = true;
+                        ProcessBackspace(false, ref changedLines);
+                    }
+                    else if (order.Order == InputManager.eWritingOrder.DELETE)
+                    {
+                        changed = true;
+                        ProcessBackspace(true, ref changedLines);
+                    }
+                    else if (order.Order == InputManager.eWritingOrder.LEFT)
+                    {
+                        CaretBlinking = false; // keep caret visible
+                        CaretPosition--;
+                        if (CaretPosition < 0)
+                        {
+                            if (MultiLine && CaretLine > 0)
+                            {
+                                CaretLine--;
+                                CaretPosition = TextLines[CaretLine].Length;
+                            }
+                            else
+                            {
+                                CaretPosition = 0;
+                            }
+                        }
+                        input.CaptureInput(Keys.Left);
+                        Highlighting = false; // breaks highlight
+                    }
+                    else if (order.Order == InputManager.eWritingOrder.RIGHT)
+                    {
+                        CaretBlinking = false; // keep caret visible
+                        CaretPosition++;
+                        if (!MultiLine)
+                        {
+                            if (CaretPosition > Text.Length)
+                            {
+                                CaretPosition = Text.Length;
+                            }
+                        }
+                        else
+                        {
+                            if (CaretPosition > TextLines[CaretLine].Length)
+                            {
+                                if (CaretLine < TextLines.Count - 1)
+                                {
+                                    CaretLine++;
+                                    CaretPosition = 0;
+                                }
+                                else
+                                {
+                                    CaretPosition = TextLines[CaretLine].Length;
+                                }
+                            }
+                        }
+                        input.CaptureInput(Keys.Right);
+                        Highlighting = false; // breaks highlight
+                    }
+                    else if (order.Order == InputManager.eWritingOrder.UP && MultiLine)
+                    {
+                        CaretBlinking = false; // keep caret visible
+                        int oldcaretlen = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                        CaretLine--;
+                        if (CaretLine < 0)
+                        {
+                            CaretLine = 0;
+                        }
+                        changedLines = true;
+
+                        // determine new caret position based on the old one
+                        CaretPosition = DeterminePositionWithinLine(TextLines[CaretLine], oldcaretlen, ComputedStyles[CaretLine]);
+
+                        input.CaptureInput(Keys.Up);
+
+                        Highlighting = false; // breaks highlight
+                    }
+                    else if (order.Order == InputManager.eWritingOrder.DOWN && MultiLine)
+                    {
+                        CaretBlinking = false; // keep caret visible
+                        int oldcaretlen = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                        CaretLine++;
+                        if (CaretLine >= TextLines.Count)
+                        {
+                            CaretLine = TextLines.Count - 1;
+                        }
+                        changedLines = true;
+
+                        // determine new caret position based on the old one
+                        CaretPosition = DeterminePositionWithinLine(TextLines[CaretLine], oldcaretlen, ComputedStyles[CaretLine]);
+
+                        input.CaptureInput(Keys.Up);
+
+                        Highlighting = false; // breaks highlight
+                    }
+                }
+            }
+            
+            // fix caret if we changed lines
+            if (MultiLine && changedLines && CaretPosition > TextLines[CaretLine].Length)
+            {
+                CaretPosition = TextLines[CaretLine].Length;
+            }
+
+            // handle copy
+            if (input.CtrlDown() && input.IsKeyFresh(Keys.C))
+            {
+                CopySelectionToClipboard();
+                input.CaptureInput(Keys.C);
+            }
+
+            // handle cut
+            if (input.CtrlDown() && input.IsKeyFresh(Keys.X))
+            {
+                CutSelectionToClipboard();
+                input.CaptureInput(Keys.X);
+                changed = true;
+            }
+
+            // compute styles if anything changed
+            if (MultiLine && changed)
+            {
+                SkipNextCompute = false;
+                ComputeStyles();
+                SkipNextCompute = true;
+            }
+
+            // handle window movement
+            if (MultiLine)
+            {
+                int linespacing = SFont.LineSpacing;
+                int maxwindowy = GetMaxWindowY();
+                int maxwindowx = GetMaxWindowX();
+
+                // handle scroll wheel
+                int scrolldiff = input.FreshMouseScrollDifference();
+                if (scrolldiff > 0)
+                {
+                    WindowY -= scrolldiff / 2;
+                    if (WindowY < 0)
+                    {
+                        WindowY = 0;
+                    }
+                    input.CaptureMouseScroll();
+                }
+                else if (scrolldiff < 0)
+                {
+                    WindowY -= scrolldiff / 2;
+                    if (WindowY > maxwindowy)
+                    {
+                        WindowY = maxwindowy;
+                    }
+                    input.CaptureMouseScroll();
+                }
+
+                bool scrolled = false;
+                // handle mouse input for scroll bars
+                if (input.MouseDown(eMouseButtons.Left))
+                {
+                    if (ScrollHorzVisible(maxwindowx))
+                    {
+                        scrolled = UpdateHorzScrolling(elapsedms, input);
+                    }
+                    if (ScrollVertVisible(maxwindowy))
+                    {
+                        scrolled = scrolled ? true : UpdateVertScrolling(elapsedms, input);
+                    }
+
+                    // handle mouse input for caret location
+                    // only if user isn't using the scroll bars
+                    if (!scrolled)
+                    {
+                        int mx = input.State.MousePos.X;
+                        int my = input.State.MousePos.Y;
+
+                        if (mx > Lastdx && mx < Lastdx + Width && my > Lastdy && my < Lastdy + Height)
+                        {
+                            // prevent caret from being invisible while being moved
+                            CaretBlinking = false;
+
+                            // check for highlighting start
+                            if (MouseWasDown && Highlighting == false)
+                            {
+                                // begin highlighting
+                                Highlighting = true;
+                                HighlightStartLine = CaretLine;
+                                HighlightStartPos = CaretPosition;
+                            }
+                            else if (!MouseWasDown)
+                            {
+                                // clicking anywhere cancels highlighting
+                                Highlighting = false;
+                            }
+
+                            // if mouse is inside our box, figure out where and place caret appropriately
+                            int mline = (int)(my - Lastdy - BorderWidth + WindowY) / linespacing;
+                            if (mline < 0)
+                            {
+                                CaretLine = 0;
+                                CaretPosition = 0;
+                            }
+                            else if (mline >= TextLines.Count)
+                            {
+                                // trivial case; clicking after end of text
+                                // place cursor at very end of text
+                                CaretLine = TextLines.Count - 1;
+                                CaretPosition = TextLines[CaretLine].Length;
+                            }
+                            else
+                            {
+                                // move cursor to selected line
+                                CaretLine = mline;
+                                // determine which position to place caret within the line
+                                CaretPosition = DeterminePositionWithinLine(TextLines[CaretLine], (int)(mx - Lastdx - BorderWidth), ComputedStyles[CaretLine]);
+                            }
+
+                            // continue highlighting
+                            if (MouseWasDown && Highlighting)
+                            {
+                                HighlightEndLine = CaretLine;
+                                HighlightEndPos = CaretPosition;
+
+                                if (HighlightEndLine == HighlightStartLine && HighlightEndPos == HighlightStartPos)
+                                {
+                                    // if we haven't highlighted anything, don't mark that we're highlighting
+                                    Highlighting = false;
+                                }
+                            }
+
+                            MouseWasDown = true;
+                        }
+                    }
+                }
+                else
+                {
+                    WasScrollingHorz = false;
+                    WasScrollingVert = false;
+                    MouseWasDown = false;
+                }
+
+                // if the line changed, make sure it's visible
+                if (changedLines)
+                {
+                    if ((linespacing * (CaretLine + 1)) - WindowY >= Height)
+                    {
+                        WindowY = ((linespacing * (CaretLine + 1)) - Height) + linespacing;
+                    }
+                    else if ((linespacing * (CaretLine - 1)) - WindowY < 0)
+                    {
+                        WindowY = (linespacing * CaretLine) - linespacing;
+                    }
+
+                    if (WindowY < 0) WindowY = 0;
+                }
+
+                if (maxwindowy < Height / 3)
+                    WindowY = 0; // special case: if text not long enough yet, prevent scrolling
+
+                // if the caret position changed, make sure it's visible
+                if (CaretPosition != oldCaretPosition)
+                {
+                    if (CaretLine >= ComputedStyles.Count)
+                    {
+                        SkipNextCompute = false;
+                        ComputeStyles();
+                        SkipNextCompute = true;
+                    }
+                    float caretx = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                    int mincaretbuffer = 15; // must have at least this many pixels on the other side of the 
+                    if (caretx - WindowX - mincaretbuffer < 0)
+                    {
+                        WindowX = caretx - mincaretbuffer;
+                    }
+                    else if (caretx - WindowX + mincaretbuffer > Width)
+                    {
+                        WindowX = (caretx - Width) + mincaretbuffer;
+                    }
+
+                    if (WindowX < 0) WindowX = 0;
+                }
+            }
+            else
+            {
+                // handle mouse input for caret location
+                if (input.MouseDown(eMouseButtons.Left))
+                {
+                    int mx = input.State.MousePos.X;
+                    int my = input.State.MousePos.Y;
+
+                    if (mx > Lastdx && mx < Lastdx + Width && my > Lastdy && my < Lastdy + Height)
+                    {
+                        // prevent caret from being invisible while being moved
+                        CaretBlinking = false;
+
+                        // check for highlighting start
+                        if (MouseWasDown && Highlighting == false)
+                        {
+                            // begin highlighting
+                            Highlighting = true;
+                            HighlightStartPos = CaretPosition;
+                        }
+                        else if (!MouseWasDown)
+                        {
+                            // clicking anywhere cancels highlighting
+                            Highlighting = false;
+                        }
+
+                        if (TStartAtStartOfScrolling == -1)
+                        {
+                            TStartAtStartOfScrolling = LastTStart;
+                            TEndAtStartOfScrolling = LastTEnd;
+                        }
+
+                        // if mouse is inside our box, figure out where and place caret appropriately
+                        CaretPosition = TStartAtStartOfScrolling + DeterminePositionWithinLine(Text.Substring(TStartAtStartOfScrolling), (int)(mx - Lastdx - BorderWidth), ComputedStyles[0].Adjust(TStartAtStartOfScrolling));
+
+                        // continue highlighting
+                        if (MouseWasDown && Highlighting)
+                        {
+                            HighlightEndPos = CaretPosition;
+
+                            if (HighlightEndPos == HighlightStartPos)
+                                Highlighting = false; // not really highlighting anything
+                        }
+
+                        MouseWasDown = true;
+                    }
+                }
+                else
+                {
+                    TStartAtStartOfScrolling = -1;
+                    MouseWasDown = false;
+                }
+            }
+
+            // trigger text changed event if any modifications occured
+            if (changed)
+            {
+                TextChanged(elapsedms, input);
+            }
+        }
+
+        public void CopyAllToClipboard()
+        {
+            Clipboard.Set(Text);
+        }
+
+        public void CopySelectionToClipboard()
+        {
+            if (Highlighting)
+            {
+                Clipboard.Set(GetHighlightedText());
+            }
+            else
+            {
+                if (MultiLine)
+                {
+                    // copy the current line
+                    Clipboard.Set(TextLines[CaretLine]);
+                }
+                else
+                {
+                    // copy everything
+                    Clipboard.Set(Text);
+                }
+            }
+        }
+
+        public void CutSelectionToClipboard()
+        {
+            if (Highlighting)
+            {
+                Clipboard.Set(GetHighlightedText());
+                DeleteHighlighted();
+            }
+            else
+            {
+                if (MultiLine)
+                {
+                    // copy the current line
+                    Clipboard.Set(TextLines[CaretLine]);
+                    TextLines.RemoveAt(CaretLine);
+                    CaretLine--;
+                    if (CaretLine < 0) CaretLine = 0;
+                    if (TextLines.Count <= 0) TextLines.Add("");
+                    CaretPosition = TextLines[CaretLine].Length;
+                    ComputeStyles();
+                }
+                else
+                {
+                    // copy everything
+                    Clipboard.Set(Text);
+                    Text = string.Empty;
+                }
+            }
+        }
+
+        private void TabHighlighted()
+        {
+            OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos);
+
+            for (int i = h1line; i <= h2line; i++)
+            {
+                TextLines[i] = "\t" + TextLines[i];
+            }
+
+            // account for added tab
+            CaretPosition++;
+            HighlightStartPos++;
+            HighlightEndPos++;
+        }
+
+        private void ShiftTabHighlighted()
+        {
+            OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos);
+
+            bool changedFirst = false;
+            bool changedLast = false;
+
+            for (int i = h1line; i <= h2line; i++)
+            {
+                if (TextLines[i].StartsWith('\t'))
+                {
+                    TextLines[i] = TextLines[i].Substring(1);
+                    if (i == h1line)
+                        changedFirst = true;
+                    if (i == h2line)
+                        changedLast = true;
+                }
+            }
+
+            if (CaretLine == h1line && changedFirst)
+                CaretPosition--;
+            if (CaretLine == h2line && changedLast)
+                CaretPosition--;
+            if (changedFirst)
+                HighlightStartPos--;
+            if (changedLast)
+                HighlightEndPos--; // account for missing tab
+            if (HighlightStartPos < 0)
+                HighlightStartPos = 0;
+            if (HighlightEndPos < 0)
+                HighlightEndPos = 0;
+            if (CaretPosition < 0)
+                CaretPosition = 0;
+        }
+
+        private void DeleteHighlighted()
+        {
+            if (MultiLine)
+            {
+                // user could drag backwards, so we need to sort the highlight positions
+                OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos);
+
+                // trim start
+                int h1end = TextLines[h1line].Length;
+                if (h2line == h1line)
+                    h1end = h2pos;
+                TextLines[h1line] = TextLines[h1line].CutOut(h1pos, h1end);
+
+                // trim end
+                if (h2line != h1line)
+                {
+                    TextLines[h2line] = TextLines[h2line].CutOut(0, h2pos);
+                    // append last line to start line
+                    TextLines[h1line] += TextLines[h2line];
+                    TextLines.RemoveAt(h2line);
+                }
+
+                // trim lines inbetween
+                for (int i = h2line - 1; i > h1line; i--)
+                    TextLines.RemoveAt(i);
+
+                CaretLine = h1line;
+                CaretPosition = h1pos;
+
+                // to avoid difficulties here, just recompute the styles now
+                ComputeStyles();
+            }
+            else
+            {
+                // remove the selected segment
+                int hstart = HighlightStartPos;
+                int hend = HighlightEndPos;
+                if (HighlightEndPos < HighlightStartPos)
+                {
+                    hstart = HighlightEndPos;
+                    hend = HighlightStartPos;
+                }
+                Text = Text.CutOut(hstart, hend - hstart);
+                CaretPosition = hstart;
+            }
+
+            Highlighting = false;
+        }
+
+        public string GetHighlightedText()
+        {
+            if (MultiLine)
+            {
+                // user could drag backwards, so we need to sort the highlight positions
+                OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos);
+
+                // simple case: same line
+                if (h1line == h2line)
+                {
+                    return TextLines[h1line].Substring(h1pos, h2pos - h1pos);
+                }
+
+                StringBuilder sb = new StringBuilder();
+
+                // append first line
+                sb.AppendLine(TextLines[h1line].Substring(h1pos));
+
+                // append middle lines
+                for (int i = h1line + 1; i < h2line; i++)
+                {
+                    sb.AppendLine(TextLines[i]);
+                }
+
+                // append last line
+                sb.Append(TextLines[h2line].Substring(0, h2pos));
+
+                return sb.ToString();
+            }
+            else
+            {
+                int hstart = HighlightStartPos;
+                int hend = HighlightEndPos;
+                if (HighlightEndPos < HighlightStartPos)
+                {
+                    hstart = HighlightEndPos;
+                    hend = HighlightStartPos;
+                }
+
+                if (hstart == hend)
+                    return string.Empty;
+                return Text.Substring(hstart, hend - hstart);
+            }
+        }
+
+        private bool UpdateVertScrolling(float elapsedms, InputManager input)
+        {
+            bool changed = false;
+            int mx = input.State.MousePos.X;
+            int my = input.State.MousePos.Y;
+
+            float sfx = Lastdx + Width - ScrollSize;
+            float sfy = Lastdy + BorderWidth;
+            int sfw = ScrollSize;
+            int sfh = Height - BorderWidth * 2;
+            if (((mx > sfx && mx < sfx + sfw && my > sfy && my < sfy + sfh) || WasScrollingVert) && !WasScrollingHorz)
+            {
+                WasScrollingVert = true;
+                int maxwindowy = GetMaxWindowY();
+                WindowY = (int)(Math.Round((1.0f - (((sfy + sfh) - my) / (sfh))) * (maxwindowy)));
+                changed = true;
+                if (WindowY < 0)
+                {
+                    WindowY = 0;
+                }
+                if (WindowY > maxwindowy)
+                {
+                    WindowY = maxwindowy;
+                }
+            }
+            return changed;
+        }
+
+        private bool UpdateHorzScrolling(float elapsedms, InputManager input)
+        {
+            bool changed = false;
+            int mx = input.State.MousePos.X;
+            int my = input.State.MousePos.Y;
+
+            float sfx = Lastdx + BorderWidth;
+            float sfy = Lastdy + Height - ScrollSize - BorderWidth;
+            int sfw = Width - (BorderWidth * 2);
+            int sfh = ScrollSize;
+
+            if (ScrollVertVisible())
+            {
+                sfw -= ScrollSize;
+            }
+
+            if (((mx > sfx && mx < sfx + sfw && my > sfy && my < sfy + sfh) || WasScrollingHorz) && !WasScrollingVert)
+            {
+                WasScrollingHorz = true;
+                int maxwindowx = GetMaxWindowX();
+                WindowX = (int)(Math.Round((1.0f - (((sfx + sfw) - mx) / (sfw))) * (maxwindowx)));
+                changed = true;
+                if (WindowX < 0)
+                {
+                    WindowX = 0;
+                }
+                if (WindowX > maxwindowx)
+                {
+                    WindowX = maxwindowx;
+                }
+            }
+            return changed;
+        }
+
+        private int GetMaxWindowY()
+        {
+            int linespacing = SFont.LineSpacing;
+            int linesPer = Height / linespacing;
+            return linespacing * (TextLines.Count - ((2 * linesPer) / 3));
+        }
+
+        private string GetLongestLine()
+        {
+            string longest = string.Empty;
+            for (int i = 0; i < TextLines.Count; i++)
+                if (TextLines[i].Length > longest.Length)
+                    longest = TextLines[i];
+            return longest;
+        }
+
+        private int GetLongestLineIndex()
+        {
+            string longest = string.Empty;
+            int lindex = 0;
+            for (int i = 0; i < TextLines.Count; i++)
+            {
+                if (TextLines[i].Length > longest.Length)
+                {
+                    longest = TextLines[i];
+                    lindex = i;
+                }
+            }
+            return lindex;
+        }
+
+        private int DeterminePositionWithinLine(string text, int x, TextStyles styles)
+        {
+            // assumes x=0 is start of line
+            // first check if we're out of bounds
+            if (x <= 0)
+                return 0;
+            int maxlen = TextHelper.GetWidthMultiStyles(SFont, text, styles);
+            if (x >= maxlen)
+                return text.Length;
+            // try a binary search to discover the closest position
+            int min = 0;
+            int max = text.Length;
+            while (true)
+            {
+                if (min == max - 1)
+                {
+                    // special case: we're down to two options
+                    int lenmin = TextHelper.GetWidthMultiStyles(SFont, text.Substring(0, min), styles);
+                    int lenmax = TextHelper.GetWidthMultiStyles(SFont, text.Substring(0, max), styles);
+                    int mindist = x - lenmin;
+                    int maxdist = lenmax - x;
+                    if (mindist < maxdist)
+                        return min;
+                    else
+                        return max;
+                }
+
+                int pos = min + ((max - min) / 2);
+                int len = TextHelper.GetWidthMultiStyles(SFont, text.Substring(0, pos), styles);
+                if (len > x)
+                {
+                    max = pos < max ? pos : max;
+                }
+                else if (len < x)
+                {
+                    min = pos > min ? pos : min;
+                }
+                else
+                {
+                    return pos; // odd case where len == x
+                }
+                if (min == max)
+                    return min;
+            }
+        }
+
+        private int GetMaxWindowX()
+        {
+            int lindex = GetLongestLineIndex();
+            string longest = TextLines[lindex];
+            int len = TextHelper.GetWidthMultiStyles(SFont, longest + "WWW", ComputedStyles[lindex]) + ScrollSize; // add some buffer room
+            len -= Width;
+            if (len < 0) len = 0;
+            return len;
+        }
+
+        private int GetSliderBarWidth(bool vert)
+        {
+            // this is just the size of the bar in the slider that the user drags
+            int minsize = BorderWidth * 3;
+            int w = vert ? Height : Width;
+            int sw = w + (vert ? GetMaxWindowY() : GetMaxWindowX());
+            int size = (int)(((float)w / (float)sw) * (((float)w * 3.0f) / 4.0f));
+
+            return size > minsize ? size : minsize;
+        }
+
+        private bool ScrollVertVisible()
+        {
+            return (GetMaxWindowY() > Height / 3);
+        }
+
+        private bool ScrollVertVisible(int maxwindowy)
+        {
+            return (maxwindowy > Height / 3);
+        }
+
+        private bool ScrollHorzVisible(int maxwindowx)
+        {
+            return (maxwindowx > 0);
+        }
+
+        private bool ScrollHorzVisible()
+        {
+            return (GetMaxWindowX() > 0);
+        }
+
+        public void ClearText(float elapsedms, InputManager input)
+        {
+            CaretPosition = 0;
+            CaretLine = 0;
+            Text = string.Empty;
+            TextChanged(elapsedms, input);
+        }
+
+        public void SetText(string newtext, float elapsedms, InputManager input)
+        {
+            Highlighting = false; // breaks highlighting
+            Text = newtext;
+            if (!MultiLine)
+            {
+                if (CaretPosition > Text.Length)
+                    CaretPosition = Text.Length;
+            }
+            else
+            {
+                if (CaretLine >= TextLines.Count)
+                    CaretLine = TextLines.Count - 1;
+                if (CaretPosition > TextLines[CaretLine].Length)
+                    CaretPosition = TextLines[CaretLine].Length;
+                int maxx = GetMaxWindowX();
+                if (WindowX > maxx)
+                    WindowX = maxx;
+                int maxy = GetMaxWindowY();
+                if (WindowY > maxy)
+                    WindowY = maxy;
+            }
+            TextChanged(elapsedms, input);
+        }
+
+        public void SetTextStyler(ITextStyler styler)
+        {
+            TextStyler = styler;
+            ComputeStyles(); // recompute styles with the new styler
+        }
+
+        private void ComputeStyles()
+        {
+            if (SkipNextCompute)
+            {
+                SkipNextCompute = false;
+                return;
+            }
+            ComputedStyles = new List<TextStyles>();
+            if (MultiLine)
+            {
+                for (int i = 0; i < TextLines.Count; i++)
+                {
+                    // if we have no styler, use a default styles set
+                    if (TextStyler == null || TextLines[i].Length <= 0)
+                    {
+                        ComputedStyles.Add(new TextStyles(new TextSettings[] { FontSettings }, new int[] { 0 }, new int[] { 0 }));
+                    }
+                    else
+                    {
+                        ComputedStyles.Add(TextStyler.GetTextStyles(TextLines[i], FontSettings));
+                    }
+                }
+            }
+            else
+            {
+                if (TextStyler == null)
+                {
+                    ComputedStyles.Add(new TextStyles(new TextSettings[] { FontSettings }, new int[] { 0 }, new int[] { 0 }));
+                }
+                else
+                {
+                    ComputedStyles.Add(TextStyler.GetTextStyles(Text, FontSettings));
+                }
+            }
+        }
+
+        private void OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos)
+        {
+            // user could drag backwards, so we need to sort the highlight positions
+            if (HighlightStartLine < HighlightEndLine || (HighlightStartLine == HighlightEndLine && HighlightStartPos <= HighlightEndPos))
+            {
+                h1line = HighlightStartLine;
+                h2line = HighlightEndLine;
+                h1pos = HighlightStartPos;
+                h2pos = HighlightEndPos;
+            }
+            else
+            {
+                h2line = HighlightStartLine;
+                h1line = HighlightEndLine;
+                h2pos = HighlightStartPos;
+                h1pos = HighlightEndPos;
+            }
+        }
+
+        // events
+        #region events
+        // enter press event
+        public EventHandler EventEnterPressedHandler;
+        public class EventEnterPressedHandlerArgs : EventArgs
+        {
+            public float ElapsedMS;
+            public InputManager Input;
+        }
+        public event EventHandler EventEnterPressed
+        {
+            add
+            {
+                lock (EventLock)
+                {
+                    EventEnterPressedHandler += value;
+                }
+            }
+            remove
+            {
+                lock (EventLock)
+                {
+                    EventEnterPressedHandler -= value;
+                }
+            }
+        }
+
+        public void EnterPressed(float elapsedms, InputManager input)
+        {
+            SelfEnterPressed(elapsedms, input);
+            OnEventEnterPressed(new EventEnterPressedHandlerArgs()
+            {
+                ElapsedMS = elapsedms,
+                Input = input,
+            });
+        }
+
+        protected virtual void SelfEnterPressed(float elapsedms, InputManager input)
+        {
+
+        }
+
+        protected virtual void OnEventEnterPressed(EventArgs e)
+        {
+            EventHandler handler;
+            lock (EventLock)
+            {
+                handler = EventEnterPressedHandler;
+            }
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        // text changed event
+        public EventHandler EventTextChangedHandler;
+        public class EventTextChangedHandlerArgs : EventArgs
+        {
+            public float ElapsedMS;
+            public InputManager Input;
+        }
+        public event EventHandler EventTextChanged
+        {
+            add
+            {
+                lock (EventLock)
+                {
+                    EventTextChangedHandler += value;
+                }
+            }
+            remove
+            {
+                lock (EventLock)
+                {
+                    EventTextChangedHandler -= value;
+                }
+            }
+        }
+
+        public void TextChanged(float elapsedms, InputManager input)
+        {
+            SelfTextChanged(elapsedms, input);
+            ComputeStyles(); // recompute styles whenever the text changes
+            OnEventTextChanged(new EventTextChangedHandlerArgs()
+            {
+                ElapsedMS = elapsedms,
+                Input = input,
+            });
+        }
+
+        protected virtual void SelfTextChanged(float elapsedms, InputManager input)
+        {
+
+        }
+
+        protected virtual void OnEventTextChanged(EventArgs e)
+        {
+            EventHandler handler;
+            lock (EventLock)
+            {
+                handler = EventTextChangedHandler;
+            }
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        #endregion events
+    }
+}

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\RelaUI.Console\RelaUI.Console.csproj" />
+    <ProjectReference Include="..\RelaUI\RelaUI.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Reference Include="MonoGame.Framework">
+      <HintPath>..\ExternalDLLs\MonoGame.Framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
