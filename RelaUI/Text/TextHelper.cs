@@ -7,6 +7,8 @@ namespace RelaUI.Text
 {
     public static class TextHelper
     {
+        public const string Tab = "    ";
+
         public static Tuple<int, int> GetSize(RelaFont font, string text, TextSettings settings)
         {
             if (font.IsDynamic)
@@ -44,7 +46,10 @@ namespace RelaUI.Text
                 }
                 return sum;// text.Length * settings.MonospaceSize;
             }
-            text = text.Replace("\t", "    ");
+            if (text.Contains('\t'))
+            {
+                text = text.Replace("\t", Tab);
+            }
             if (font.IsDynamic)
                 return (int)Math.Ceiling(font.DFont.MeasureString(text).X);
             return (int)Math.Ceiling(font.SFont.MeasureString(text).X);
@@ -140,7 +145,33 @@ namespace RelaUI.Text
                 {
                     lastspace = c;
                 }
-                int width = GetWidth(font, text.Substring(c, 1), settings);
+
+                // note: high surrogate = start of a combined
+                // low surrogate = end of a combined
+                // don't check width for high surrogates alone
+                // don't check width for low surrogates
+                string check;
+                int width = 0;
+                if (!char.IsLowSurrogate(text[c]))
+                {
+                    if (char.IsHighSurrogate(text[c]))
+                    {
+                        check = text.Substring(c, 2);
+                    }
+                    else
+                    {
+                        check = text.Substring(c, 1);
+                    }
+                    if (check[0] == '\t')
+                    {
+                        width = GetWidth(font, Tab, settings);
+                    }
+                    else if (check[0] != '\n')
+                    {
+                        width = GetWidth(font, check, settings);
+                    }
+                }
+
                 if (text[c] == '\n')
                 {
                     // force new line
@@ -151,7 +182,7 @@ namespace RelaUI.Text
                     cstart = c + 1;
                     currentwidth = 0;
                 }
-                else if (currentwidth + width > w)
+                else if (currentwidth != 0 && currentwidth + width > w)
                 {
                     // we're in excess, so we need to move to a new line
                     if (splitwords || lastspace <= cstart) // failsafe, if the word is too long split it anyways

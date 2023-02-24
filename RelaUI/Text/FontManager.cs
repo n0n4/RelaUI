@@ -67,7 +67,11 @@ namespace RelaUI.Text
 
                 using (var stream = File.OpenRead(file.FullName))
                 {
-                    DynamicFonts.Add(fname, DynamicSpriteFont.FromTtf(stream, DefaultSize));
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        stream.CopyTo(memoryStream);
+                        DynamicFonts.Add(fname, DynamicSpriteFont.FromTtf(memoryStream.ToArray(), DefaultSize));
+                    }
                 }
 
                 if (DefaultDynamicFont == string.Empty)

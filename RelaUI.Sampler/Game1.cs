@@ -114,7 +114,7 @@ namespace RelaUI.Sampler
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-            
+
             // TODO: Add your update logic here
             float elapsedms = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
             InputManager.Update(elapsedms);

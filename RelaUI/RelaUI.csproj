@@ -1,26 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="SpriteFontPlus.MonoGame" Version="0.7.0.22" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RelaUI.Input\RelaUI.Input.csproj" />
     <ProjectReference Include="..\RelaUI.Utilities\RelaUI.Utilities.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="MonoGame.Framework">
-      <HintPath>..\ExternalDLLs\MonoGame.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="SpriteFontPlus">
-      <HintPath>..\ExternalDLLs\SpriteFontPlus.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

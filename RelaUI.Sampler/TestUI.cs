@@ -141,7 +141,7 @@ namespace RelaUI.Sampler
                 panel10.Visible = false;
             };
             UISystem.Add(panel10);
-            UITextField relaMultiText = new UITextField(5, 5, 380, 350, "", autoheight: false, 
+            UITextField relaMultiText = new UITextField(5, 5, 380, 350, "", autoheight: false,
                 fontsize: 18, font: "NotoMono-Regular")
             {
                 MultiLine = true
@@ -152,7 +152,7 @@ namespace RelaUI.Sampler
             };
             relaMultiText.SetTextStyler(new TextStylerRelaScript());
             panel10.Add(relaMultiText);
-            
+
             UISystem.Init(style);
         }
 

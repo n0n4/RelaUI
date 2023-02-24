@@ -1,14 +1,3 @@
-﻿using System;
-
-namespace RelaUI.Sampler
-{
-    public static class Program
-    {
-        [STAThread]
-        static void Main()
-        {
-            using (var game = new Game1())
-                game.Run();
-        }
-    }
-}
+﻿
+using var game = new RelaUI.Sampler.Game1();
+game.Run();

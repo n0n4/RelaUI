@@ -71,7 +71,7 @@ namespace RelaUI
             TextSettings settings, int prevTabSum = 0)
         {
 
-            if (settings.HasShadow && settings.ShadowColor != null)
+            if (settings.HasShadow)
             {
                 /*s.DrawString(font,
                     text,

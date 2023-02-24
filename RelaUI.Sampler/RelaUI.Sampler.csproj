@@ -1,19 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <Platforms>AnyCPU;x64</Platforms>
+    <TargetFramework>net6.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TieredCompilation>false</TieredCompilation>
   </PropertyGroup>
-
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
-    <MonoGameContentReference Include="**\*.mgcb" />
+    <None Remove="Icon.ico" />
+    <None Remove="Icon.bmp" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="MonoGame.Content.Builder" Version="3.7.0.4" />
+    <EmbeddedResource Include="Icon.ico" />
+    <EmbeddedResource Include="Icon.bmp" />
   </ItemGroup>
-
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.1.303" />
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.1.303" />
+    <PackageReference Include="SpriteFontPlus.MonoGame" Version="0.7.0.22" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RelaUI.Basics\RelaUI.Basics.csproj" />
     <ProjectReference Include="..\RelaUI.Console\RelaUI.Console.csproj" />
@@ -22,18 +31,8 @@
     <ProjectReference Include="..\RelaUI.Utilities\RelaUI.Utilities.csproj" />
     <ProjectReference Include="..\RelaUI\RelaUI.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="MonoGame.Framework">
-      <HintPath>..\ExternalDLLs\MonoGame.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="SpriteFontPlus">
-      <HintPath>..\ExternalDLLs\SpriteFontPlus.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="&#xD;&#xA;copy /Y &quot;$(SolutionDir)ExternalDLLs\libopenal.1.dylib&quot; &quot;$(TargetDir)libopenal.1.dylib&quot;&#xD;&#xA;copy /Y &quot;$(SolutionDir)ExternalDLLs\libSDL2-2.0.0.dylib&quot; &quot;$(TargetDir)libSDL2-2.0.0.dylib&quot;&#xD;&#xA;&#xD;&#xA;xcopy &quot;$(SolutionDir)ExternalDLLs\x86&quot; &quot;$(TargetDir)x86&quot; /e /y /i /r&#xD;&#xA;xcopy &quot;$(SolutionDir)ExternalDLLs\x64&quot; &quot;$(TargetDir)x64&quot; /e /y /i /r" />
+  <Target Name="RestoreDotnetTools" BeforeTargets="Restore">
+    <Message Text="Restoring dotnet tools" Importance="High" />
+    <Exec Command="dotnet tool restore" />
   </Target>
-
 </Project>

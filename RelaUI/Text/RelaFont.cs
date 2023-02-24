@@ -20,7 +20,7 @@ namespace RelaUI.Text
             get
             {
                 if (IsDynamic)
-                    return DFont.Size;
+                    return (int)DFont.Size;
                 return SFont.LineSpacing;
             }
         }
