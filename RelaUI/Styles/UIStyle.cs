@@ -11,31 +11,36 @@ namespace RelaUI.Styles
 {
     public class UIStyle
     {
+        public static Color DefaultBackgroundColor = new Color(31, 31, 31);
+        public static Color DefaultSecondaryColor = new Color(46, 46, 46);
+        public static Color DefaultAccentColor = new Color(56, 56, 56);
+        public static Color DefaultForegroundColor = new Color(250, 250, 250);
+
         public string CursorStyle = "C1";
         public Color CursorColor = Color.Lime;
 
-        public Color BackgroundColor = Color.Black;
-        public Color SecondaryBackgroundColor = Color.MidnightBlue;
-        public Color BackgroundAccent = Color.DarkSlateBlue; // used e.g. for panel borders
-        public Color ForegroundColor = Color.White; // text color generally
+        public Color BackgroundColor = DefaultBackgroundColor;
+        public Color SecondaryBackgroundColor = DefaultSecondaryColor;
+        public Color BackgroundAccent = DefaultAccentColor; // used e.g. for panel borders
+        public Color ForegroundColor = DefaultForegroundColor; // text color generally
         public Color SecondaryTextColor = Color.Gray; // non-primary text (like placeholders)
 
         public int BorderWidth = 2;
 
         // button style
-        public Color ButtonBackgroundColor = Color.MidnightBlue;
-        public Color ButtonHoverColor = Color.Snow;
-        public Color ButtonPressedColor = Color.DarkSlateBlue;
-        public Color ButtonDisabledColor = Color.DarkSlateBlue;
+        public Color ButtonBackgroundColor = DefaultSecondaryColor;
+        public Color ButtonHoverColor = new Color(61, 61, 61);
+        public Color ButtonPressedColor = DefaultAccentColor;
+        public Color ButtonDisabledColor = DefaultAccentColor;
 
         public bool ButtonHasBorder = true; // used for button border
         public int ButtonBorderWidth = 2;
-        public Color ButtonAccent = Color.DarkSlateBlue;
+        public Color ButtonAccent = DefaultAccentColor;
 
-        public Color ButtonTextColor = Color.White;
-        public Color ButtonHoverTextColor = Color.Black;
-        public Color ButtonPressedTextColor = Color.White;
-        public Color ButtonDisabledTextColor = Color.LightGray;
+        public Color ButtonTextColor = new Color(230, 230, 230);
+        public Color ButtonHoverTextColor = DefaultForegroundColor;
+        public Color ButtonPressedTextColor = DefaultForegroundColor;
+        public Color ButtonDisabledTextColor = new Color(200, 200, 200);
 
         [JsonIgnore]
         public FontManager FontManager;

@@ -56,6 +56,13 @@ namespace RelaUI.Components
             Add(child);
         }
 
+        public UIComponent GetRoot()
+        {
+            if (Parent != null)
+                return Parent.GetRoot();
+            return this;
+        }
+
         /// <summary>
         /// TryInit is like Init, but it will silently fail instead of throwing
         /// an exception if initialization is not possible.
@@ -142,9 +149,16 @@ namespace RelaUI.Components
                     }
                 }
             }
+            SelfOverRender(elapsedms, g, sb, input, dx, dy);
         }
 
         protected virtual void SelfRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)
+        {
+            // overwrite this
+        }
+
+        // for drawing on top of child components
+        protected virtual void SelfOverRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)
         {
             // overwrite this
         }
@@ -180,13 +194,17 @@ namespace RelaUI.Components
                 && Hovering(dx, dy, input);
         }
 
-        public UIComponent CheckFocus(float dx, float dy, InputManager input)
+        public UIComponent CheckFocus(float dx, float dy, InputManager input, out float finalDx, out float finalDy)
         {
+            finalDx = 0;
+            finalDy = 0;
             if (!Initialized)
                 return null;
 
             dx = dx + x;
             dy = dy + y;
+            finalDx = dx;
+            finalDy = dy;
             if (!Hovering(dx, dy, input))
             {
                 if (LockFocus)
@@ -201,9 +219,11 @@ namespace RelaUI.Components
                 for (int i = Components.Count - 1; i >= 0; i--)
                 {
                     UIComponent comp = Components[i];
-                    UIComponent option = comp.CheckFocus(dx + InnerX, dy + InnerY, input);
+                    UIComponent option = comp.CheckFocus(dx + InnerX, dy + InnerY, input, out float testDx, out float testDy);
                     if (option != null)
                     {
+                        finalDx = testDx;
+                        finalDy = testDy;
                         retval = option;
                         break;
                     }
@@ -229,6 +249,8 @@ namespace RelaUI.Components
         {
             public float ElapsedMS;
             public InputManager Input;
+            public float Dx;
+            public float Dy;
         }
         public event EventHandler EventFocused
         {
@@ -248,7 +270,7 @@ namespace RelaUI.Components
             }
         }
 
-        public void GetFocus(float elapsedms, InputManager input)
+        public void GetFocus(float elapsedms, InputManager input, float dx, float dy)
         {
             Focused = true;
             SelfGetFocus(elapsedms, input);
@@ -256,6 +278,8 @@ namespace RelaUI.Components
             {
                 ElapsedMS = elapsedms,
                 Input = input,
+                Dx = dx,
+                Dy = dy
             });
         }
 

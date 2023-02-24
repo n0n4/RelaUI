@@ -27,6 +27,7 @@
     <ProjectReference Include="..\RelaUI.Basics\RelaUI.Basics.csproj" />
     <ProjectReference Include="..\RelaUI.Console\RelaUI.Console.csproj" />
     <ProjectReference Include="..\RelaUI.Input\RelaUI.Input.csproj" />
+    <ProjectReference Include="..\RelaUI.Integration\RelaUI.Integration.csproj" />
     <ProjectReference Include="..\RelaUI.Profiles\RelaUI.Profiles.csproj" />
     <ProjectReference Include="..\RelaUI.Utilities\RelaUI.Utilities.csproj" />
     <ProjectReference Include="..\RelaUI\RelaUI.csproj" />

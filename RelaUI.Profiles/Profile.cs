@@ -7,8 +7,11 @@ namespace RelaUI.Profiles
 {
     public class Profile<T>
     {
+        public const string DefaultStyle = "Default.json";
+
         public string SaveName = "profile";
         public string UserName = "User";
+        public string Style = DefaultStyle;
 
         public T Options;
 

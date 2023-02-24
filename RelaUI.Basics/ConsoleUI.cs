@@ -167,7 +167,7 @@ namespace RelaUI.Basics
             if (LogPanel.Visible)
             {
                 Boss.Unfocus(elapsedms, input);
-                Boss.Focus(InputField, elapsedms, input);
+                Boss.Focus(InputField, elapsedms, input, 0, 0);
             }
             return true;
         }

@@ -17,7 +17,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelaUI.Profiles", "RelaUI.P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelaUI.Utilities.UT", "RelaUI.Utilities.UT\RelaUI.Utilities.UT.csproj", "{06CA07F0-BE08-4F55-9EEF-18FEF879E58D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelaUI.Sampler", "RelaUI.Sampler\RelaUI.Sampler.csproj", "{EAEA99FA-FBB2-4CBE-A163-2D53B429361C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RelaUI.Sampler", "RelaUI.Sampler\RelaUI.Sampler.csproj", "{EAEA99FA-FBB2-4CBE-A163-2D53B429361C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RelaUI.Integration", "RelaUI.Integration\RelaUI.Integration.csproj", "{D3D6E3C3-A732-43AB-B87D-23048DED69D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,6 +93,14 @@ Global
 		{EAEA99FA-FBB2-4CBE-A163-2D53B429361C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EAEA99FA-FBB2-4CBE-A163-2D53B429361C}.Release|x64.ActiveCfg = Release|Any CPU
 		{EAEA99FA-FBB2-4CBE-A163-2D53B429361C}.Release|x64.Build.0 = Release|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Debug|x64.Build.0 = Debug|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Release|x64.ActiveCfg = Release|Any CPU
+		{D3D6E3C3-A732-43AB-B87D-23048DED69D8}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -68,10 +68,10 @@ namespace RelaUI
             FocusedComponent = null;
         }
 
-        public void Focus(UIComponent comp, float elapsedms, InputManager input)
+        public void Focus(UIComponent comp, float elapsedms, InputManager input, float dx, float dy)
         {
             FocusedComponent = comp;
-            comp.GetFocus(elapsedms, input);
+            comp.GetFocus(elapsedms, input, dx, dy);
         }
 
         public void Update(float elapsedms, InputManager input)
@@ -85,7 +85,7 @@ namespace RelaUI
                     nextFocus = comp;
             }
             if (nextFocus != null)
-                Focus(nextFocus, elapsedms, input);
+                Focus(nextFocus, elapsedms, input, 0, 0);
 
             // TODO: handle deciding who has focus if mouse is released
             if (input.MousePressed(eMouseButtons.Left) || input.MousePressed(eMouseButtons.Right))
@@ -93,10 +93,10 @@ namespace RelaUI
                 Unfocus(elapsedms, input);
                 for (int i = UIHandles.Count - 1; i >= 0; i--)
                 {
-                    UIComponent option = UIHandles[i].GetUISystem().CheckFocus(input);
+                    UIComponent option = UIHandles[i].GetUISystem().CheckFocus(input, out float dx, out float dy);
                     if (option != null)
                     {
-                        Focus(option, elapsedms, input);
+                        Focus(option, elapsedms, input, dx, dy);
                         break;
                     }
                 }

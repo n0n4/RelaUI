@@ -51,18 +51,20 @@ namespace RelaUI
         public void Init(UIStyle style)
         {
             Style = style;
-            foreach (UIComponent u in Components)
+            for (int i = 0; i < Components.Count; i++)
             {
-                u.Init();
+                Components[i].Init();
             }
         }
 
-        public UIComponent CheckFocus(InputManager input)
+        public UIComponent CheckFocus(InputManager input, out float finalDx, out float finalDy)
         {
+            finalDx = 0;
+            finalDy = 0;
             for (int i = Components.Count - 1; i >= 0; i--)
             {
                 UIComponent comp = Components[i];
-                UIComponent option = comp.CheckFocus(0, 0, input);
+                UIComponent option = comp.CheckFocus(0, 0, input, out finalDx, out finalDy);
                 if (option != null)
                 {
                     return option;

@@ -108,12 +108,13 @@ namespace RelaUI.Components
         private float Lastdy = 0;
 
         public UITextField(float x, float y, int w, int h, string text, string font = "", int? fontsize = null,
-            bool autoheight = true, string placeholdertext = "")
+            bool autoheight = true, string placeholdertext = "", bool multiLine = false)
         {
             this.x = x;
             this.y = y;
             Width = w;
             Height = h;
+            MultiLine = multiLine;
             Text = text;
             FontSettings.FontName = font;
             FontSettings.FontSize = fontsize != null ? (int)fontsize : 0;

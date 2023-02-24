@@ -62,7 +62,7 @@ namespace RelaUI.Components
         public double CheckValidTimerMax = 0.5; // seconds
 
         public UINumberField(float x, float y, int width, int height, int buttonWidth, string initialValue, bool isInt,
-            string font = "", int? fontsize = null)
+            string font = "", int? fontsize = null, bool useButtons = true)
         {
             this.x = x;
             this.y = y;
@@ -119,35 +119,38 @@ namespace RelaUI.Components
                 }
             };*/
 
-            ButtonUp = new UIButton(Width - buttonWidth, 0, ButtonWidth, Height / 2, "^", font, fontsize);
-            Add(ButtonUp);
-            ButtonUp.EventFocused += (sender, args) =>
+            if (useButtons)
             {
-                var eargs = args as UIComponent.EventFocusedHandlerArgs;
-                if (IsInt)
+                ButtonUp = new UIButton(Width - buttonWidth, 0, ButtonWidth, Height / 2, "^", font, fontsize);
+                Add(ButtonUp);
+                ButtonUp.EventFocused += (sender, args) =>
                 {
-                    Add(IntIncrement, eargs.ElapsedMS, eargs.Input);
-                }
-                else
-                {
-                    Add(DoubleIncrement, eargs.ElapsedMS, eargs.Input);
-                }
-            };
+                    var eargs = args as UIComponent.EventFocusedHandlerArgs;
+                    if (IsInt)
+                    {
+                        Add(IntIncrement, eargs.ElapsedMS, eargs.Input);
+                    }
+                    else
+                    {
+                        Add(DoubleIncrement, eargs.ElapsedMS, eargs.Input);
+                    }
+                };
 
-            ButtonDown = new UIButton(Width - buttonWidth, Height / 2, ButtonWidth, Height / 2, "v", font, fontsize);
-            Add(ButtonDown);
-            ButtonDown.EventFocused += (sender, args) =>
-            {
-                var eargs = args as UIComponent.EventFocusedHandlerArgs;
-                if (IsInt)
+                ButtonDown = new UIButton(Width - buttonWidth, Height / 2, ButtonWidth, Height / 2, "v", font, fontsize);
+                Add(ButtonDown);
+                ButtonDown.EventFocused += (sender, args) =>
                 {
-                    Add(-IntIncrement, eargs.ElapsedMS, eargs.Input);
-                }
-                else
-                {
-                    Add(-DoubleIncrement, eargs.ElapsedMS, eargs.Input);
-                }
-            };
+                    var eargs = args as UIComponent.EventFocusedHandlerArgs;
+                    if (IsInt)
+                    {
+                        Add(-IntIncrement, eargs.ElapsedMS, eargs.Input);
+                    }
+                    else
+                    {
+                        Add(-DoubleIncrement, eargs.ElapsedMS, eargs.Input);
+                    }
+                };
+            }
         }
 
         public void Resize()
@@ -155,15 +158,21 @@ namespace RelaUI.Components
             TextField.Width = Width - ButtonWidth;
             TextField.Height = Height;
 
-            ButtonUp.x = Width - ButtonWidth;
-            ButtonUp.y = 0;
-            ButtonUp.Width = ButtonWidth;
-            ButtonUp.Height = Height / 2;
+            if (ButtonUp != null) 
+            {
+                ButtonUp.x = Width - ButtonWidth;
+                ButtonUp.y = 0;
+                ButtonUp.Width = ButtonWidth;
+                ButtonUp.Height = Height / 2;
+            }
 
-            ButtonDown.x = Width - ButtonWidth;
-            ButtonDown.y = Height / 2;
-            ButtonDown.Width = ButtonWidth;
-            ButtonDown.Height = Height / 2;
+            if (ButtonDown != null)
+            {
+                ButtonDown.x = Width - ButtonWidth;
+                ButtonDown.y = Height / 2;
+                ButtonDown.Width = ButtonWidth;
+                ButtonDown.Height = Height / 2;
+            }
         }
 
         public override int GetWidth()

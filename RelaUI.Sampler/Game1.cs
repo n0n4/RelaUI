@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using RelaUI.Basics;
 using RelaUI.Console;
 using RelaUI.Input;
+using RelaUI.Integration;
 using RelaUI.Profiles;
 using RelaUI.Styles;
 using RelaUI.Text;
@@ -16,26 +17,27 @@ namespace RelaUI.Sampler
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        private UIStyle UIStyle;
-        private UIBoss UIBoss;
-        private FontManager FontManager = new FontManager();
-        private InputManager InputManager;
-        private CursorManager CursorManager = new CursorManager();
-        private RelaConsole Console = new RelaConsole();
-        private HotkeyManager HotkeyManager;
-        private ProfileManager<SampleProfile> ProfileManager;
-
-        private readonly string DefaultHotkeysLocation = ".\\hotkeys.json";
-        private readonly string DefaultUIStyleLocation = ".\\style.json";
-        private readonly string DefaultCrashLogLocation = ".\\crash.log";
-        private readonly string DefaultNormalLogLocation = ".\\last.log";
-        private readonly string DefaultProfilesLocation = ".\\Profiles\\";
+        UI<SampleProfile> UI = new UI<SampleProfile>();
+        private TestUI TestUI;
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            Window.AllowUserResizing = true;
+            Window.ClientSizeChanged += Window_ClientSizeChanged;
+        }
+
+        private void Window_ClientSizeChanged(object sender, EventArgs e)
+        {
+            // trickle info about window resizing down to the rest of the app
+            // use Window.ClientBounds
+            graphics.GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, Window.ClientBounds.Width, Window.ClientBounds.Height);
+            if (TestUI != null)
+            {
+                TestUI.Resize(Window.ClientBounds.Width, Window.ClientBounds.Height);
+            }
         }
 
         protected override void Initialize()
@@ -47,67 +49,34 @@ namespace RelaUI.Sampler
 
         protected override void LoadContent()
         {
-            Console.Log("Loading Content...");
+            UI.Console.Log("Loading Content...");
 
             try
             {
                 // Create a new SpriteBatch, which can be used to draw textures.
                 spriteBatch = new SpriteBatch(GraphicsDevice);
 
-                // TODO: use this.Content to load your game content here
-
-                // load the fonts
-                FontManager.Load(Content);
-                FontManager.DefaultSize = 16;
-                CursorManager.Load(Content);
-                CursorManager.Enabled = false;
-
-                // load the UI Style
-                bool success;
-                string errormsg;
-                UIStyle = UIStyle.Load(DefaultUIStyleLocation, FontManager, out success, out errormsg);
-                if (!success)
-                {
-                    UIStyle.Save(DefaultUIStyleLocation, UIStyle, out errormsg);
-                }
-                CursorManager.SetCursor(UIStyle.CursorStyle, UIStyle.CursorColor);
-
-                // load the cursor, create the input manager
-                InputManager = new InputManager(CursorManager);
-                HotkeyManager = new HotkeyManager((s) => { Console.Error(s); });
-                List<HotkeySave> hotkeys = HotkeyManager.Load(DefaultHotkeysLocation);
-                if (hotkeys == null)
-                    hotkeys = new List<HotkeySave>();
-                //Console.AddHandle("Hotkey", new ConsoleHandleHotkeyManager(HotkeyManager));
-
-                // create the profile manager
-                ProfileManager = new ProfileManager<SampleProfile>(DefaultProfilesLocation,
-                    MakeDefaultProfile, (s) => { Console.Error(s); });
-
-                // load specific hotkeys
-                List<HotkeySave> profHotkeys = ProfileManager.CurrentProfile.Hotkeys;
-                HotkeyManager.LoadProfile(HotkeyManager.MergeHotkeySaves(hotkeys, profHotkeys));
+                UI.LoadContent(Content, MakeDefaultProfile);
 
                 // Add the startup UI
                 //UIBoss.Add(new TestUI(UIStyle));
-                UIBoss = new UIBoss(UIStyle, HotkeyManager);
-                TestUI testui = new TestUI(UIStyle, GraphicsDevice);
-                UIBoss.Add(testui);
-                UIBoss.Add(new ConsoleUI(UIBoss, UIStyle, GraphicsDevice, Console,
+                TestUI = new TestUI(UI, UI.Style, GraphicsDevice);
+                UI.Boss.Add(TestUI);
+                UI.Boss.Add(new ConsoleUI(UI.Boss, UI.Style, GraphicsDevice, UI.Console,
                     GraphicsDevice.PresentationParameters.BackBufferWidth, 300));
-                UIBoss.Add(new FrameRateUI(UIStyle, GraphicsDevice));
+                UI.Boss.Add(new FrameRateUI(UI.Style, GraphicsDevice));
                 //Console.AddHandle("UIStyle", new ConsoleHandleUIStyle(UIBoss));
 
             }
             catch (Exception e)
             {
-                Console.Error("FAILED: " + e.Message);
-                Console.Error("Could not load content. Aborting.");
+                UI.Console.Error("FAILED: " + e.Message);
+                UI.Console.Error("Could not load content. Aborting.");
                 Crash(e);
                 return;
             }
 
-            Console.Log("Content Loaded.");
+            UI.Console.Log("Content Loaded.");
         }
 
         protected override void Update(GameTime gameTime)
@@ -116,30 +85,18 @@ namespace RelaUI.Sampler
                 Exit();
 
             // TODO: Add your update logic here
-            float elapsedms = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-            InputManager.Update(elapsedms);
-            UIBoss.Update(elapsedms, InputManager);
-            // note: it is important that hotkey manager is called last
-            // so that other features have a chance to capture text input
-            InputManager.PostUpdate();
-            HotkeyManager.Update(elapsedms, InputManager);
+            UI.Update(gameTime);
 
             base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black);//Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
             spriteBatch.Begin();
             // TODO: Add your drawing code here
 
-            float elapsedms = (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-
-            // now render all UIs
-            UIBoss.Draw(elapsedms, GraphicsDevice, spriteBatch, InputManager);
-
-            // draw cursor
-            InputManager.Render(GraphicsDevice, spriteBatch);
+            UI.Draw(gameTime, GraphicsDevice, spriteBatch);
 
             spriteBatch.End();
             base.Draw(gameTime);
@@ -153,7 +110,7 @@ namespace RelaUI.Sampler
         /// <param name="e"></param>
         private void HandleOnExiting(object sender, EventArgs e)
         {
-            Console.Save(DefaultNormalLogLocation);
+            UI.Console.Save(UI.DefaultNormalLogLocation);
         }
 
         /// <summary>
@@ -166,12 +123,12 @@ namespace RelaUI.Sampler
             Exception ie = e;
             while (ie != null)
             {
-                Console.Error("!!CRASH!!" + ie.Message);
-                Console.Error("!!CRASH!!" + ie.StackTrace);
+                UI.Console.Error("!!CRASH!!" + ie.Message);
+                UI.Console.Error("!!CRASH!!" + ie.StackTrace);
                 ie = e.InnerException;
             }
 
-            Console.Save(DefaultCrashLogLocation);
+            UI.Console.Save(UI.DefaultCrashLogLocation);
             Exit();
             System.Environment.Exit(0);
         }

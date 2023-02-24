@@ -131,7 +131,7 @@ namespace RelaUI
         {
             if (!monospaced)
             {
-                text = text.Replace("\t", "    ");
+                text = text.Replace("\t", TextHelper.Tab);
                 if (font.IsDynamic)
                     s.DrawString(font.DFont, text, new Vector2(x, y), c);
                 else

@@ -13,9 +13,29 @@ namespace RelaUI.Components
 {
     public class UIPanel : UIComponent
     {
-        public int Width = 100;
-        public int Height = 100;
-        
+        private int WidthField = 100;
+        public int Width
+        {
+            get { return WidthField; }
+            set
+            {
+                WidthField = value;
+
+                Resize();
+            }
+        }
+        private int HeightField = 100;
+        public int Height
+        {
+            get { return HeightField; }
+            set
+            {
+                HeightField = value;
+
+                Resize();
+            }
+        }
+
         public Color Color;
         public bool HasBorder = true;
         public Color BorderColor;
@@ -32,8 +52,28 @@ namespace RelaUI.Components
 
         // scrolling works by manipulating the InnerX and InnerY parameters
         public bool HasScrolling = false;
-        public int ScrollWidth = 100; // the "real" width of the panel
-        public int ScrollHeight = 100; // the "real" height of the panel
+        private int ScrollWidthField = 100; // the "real" width of the panel
+        public int ScrollWidth
+        {
+            get { return ScrollWidthField; }
+            set
+            {
+                ScrollWidthField = value;
+
+                Resize();
+            }
+        }
+        private int ScrollHeightField = 100; // the "real" height of the panel
+        public int ScrollHeight
+        {
+            get { return ScrollHeightField; }
+            set
+            {
+                ScrollHeightField = value;
+
+                Resize();
+            }
+        }
 
         public int ScrollCurrentX = 0; // current x/y pos of scrolling
         public int ScrollCurrentY = 0;
@@ -117,10 +157,10 @@ namespace RelaUI.Components
             BaseInnerX = InnerX;
             BaseInnerY = InnerY;
 
-            if (OldAutoComponents.EqualOrderContent(AutoComponents))
+            if (!OldAutoComponents.EqualOrderContent(AutoComponents))
             {
                 DoneAuto = false;
-                AutoOriginalPositions = new Dictionary<int, Vector2>();
+                AutoOriginalPositions.Clear();
             }
 
             // handle auto components
@@ -142,12 +182,14 @@ namespace RelaUI.Components
                     comp.x = AutoOriginalPositions[c].X;
                     comp.y = AutoOriginalPositions[c].Y;
                 }
+                float origx = comp.x;
+                float origy = comp.y;
                 comp.x += ax;
                 comp.y += ay;
                 if (AutoOrientation == eUIOrientation.HORIZONTAL)
                 {
-                    ax += comp.GetWidth();
-                    totalwidth += comp.GetWidth();
+                    ax += comp.GetWidth() + (int)origx;
+                    totalwidth += comp.GetWidth() + (int)origx;
                     if ((int)InnerY + comp.GetHeight() > totalheight)
                     {
                         totalheight = (int)InnerY + comp.GetHeight();
@@ -155,8 +197,8 @@ namespace RelaUI.Components
                 }
                 else if (AutoOrientation == eUIOrientation.VERTICAL)
                 {
-                    ay += comp.GetHeight();
-                    totalheight += comp.GetHeight();
+                    ay += comp.GetHeight() + (int)origy;
+                    totalheight += comp.GetHeight() + (int)origy;
                     if ((int)InnerX + comp.GetWidth() > totalwidth)
                     {
                         totalwidth = (int)InnerX + comp.GetWidth();
@@ -533,6 +575,16 @@ namespace RelaUI.Components
         protected override void SelfRemove(UIComponent comp)
         {
             AutoComponents.Remove(comp);
+        }
+
+        public void Resize()
+        {
+            SelfResize();
+        }
+
+        protected virtual void SelfResize()
+        {
+
         }
     }
 }

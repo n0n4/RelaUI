@@ -6,8 +6,8 @@ namespace RelaUI.Components
 {
     public class UITabView : UIPanel
     {
-        private UIPanel TabPanel = null;
-        private UIPanel DisplayPanel = null;
+        public UIPanel TabPanel = null;
+        public UIPanel DisplayPanel = null;
         private List<TabEntry> Tabs = new List<TabEntry>();
 
         /// <summary>
@@ -15,6 +15,8 @@ namespace RelaUI.Components
         /// </summary>
         private int ButtonWidth = 0;
         private int ButtonHeight = 30;
+
+        public int FontSize = 16;
 
         private class TabEntry
         {
@@ -40,30 +42,45 @@ namespace RelaUI.Components
             eUIOrientation autoorientation = eUIOrientation.VERTICAL,
             bool hasscrolling = false, int scrollw = 0, int scrollh = 0,
             bool hasclose = false,
-            int buttonwidth = 0, int buttonheight = 30)
+            int buttonwidth = 0, int buttonheight = 30, int fontsize = 16)
             : base(x, y, w, h, hastitle, title, titlefont, titlesize, autoorientation, hasscrolling, scrollw, scrollh, hasclose)
         {
+            ButtonWidth = buttonwidth;
+            ButtonHeight = buttonheight;
+            FontSize = fontsize;
+
             TabPanel = new UIPanel(0, 0, w, buttonheight,
                 autoorientation: eUIOrientation.HORIZONTAL,
                 hasscrolling: true);
             Add(TabPanel);
 
             DisplayPanel = new UIPanel(0, buttonheight, w, h - buttonheight,
-                hasscrolling: true);
+                hasscrolling: true)
+            {
+                AutoScrollHeight = true,
+                AutoScrollWidth = true,
+                HasBorder = false,
+                InnerMargin = 0
+            };
             Add(DisplayPanel);
         }
 
         public void AddTab(string name, string displayname, UIComponent tab)
         {
-            UIButton btn = new UIButton(0, 0, ButtonWidth, ButtonHeight, displayname,
-                autowidth: (ButtonWidth == 0));
+            int xmargin = 10;
+            if (Tabs.Count == 0)
+                xmargin = 0;
+            UIButton btn = new UIButton(xmargin, 0, ButtonWidth, ButtonHeight, displayname,
+                autowidth: (ButtonWidth == 0), fontsize: FontSize);
             TabPanel.AddAuto(btn);
 
             UIButton xbtn = new UIButton(0, 0, 0, ButtonHeight, "X",
-                autowidth: true);
+                autowidth: true, fontsize: FontSize);
             TabPanel.AddAuto(xbtn);
 
             Tabs.Add(new TabEntry(name, displayname, tab, btn, xbtn));
+            tab.Visible = false;
+            DisplayPanel.Add(tab);
 
             // add event to button
             btn.EventFocused += (s, e) =>
@@ -110,6 +127,11 @@ namespace RelaUI.Components
                     }
                 }
             }
+
+            if (Tabs.Count > 0)
+            {
+                Tabs[0].Button.x = 0;
+            }
         }
 
         public void ChangeTab(string name)
@@ -131,7 +153,7 @@ namespace RelaUI.Components
                 var t = Tabs[i];
                 if (i == index)
                 {
-                    DisplayPanel.Add(t.Tab);
+                    t.Tab.Visible = true;
                     DisplayPanel.ScrollWidth = t.Tab.GetWidth();
                     DisplayPanel.ScrollHeight = t.Tab.GetHeight();
                     t.Active = true;
@@ -142,10 +164,26 @@ namespace RelaUI.Components
                     t.Button.StayPressed = false;
                     if (t.Active)
                     {
-                        DisplayPanel.Remove(t.Tab);
+                        t.Tab.Visible = false;
                         t.Active = false;
                     }
                 }
+            }
+        }
+
+        protected override void SelfResize()
+        {
+            base.SelfResize();
+
+            if (TabPanel != null)
+            {
+                TabPanel.Width = Width;
+            }
+
+            if (DisplayPanel != null)
+            {
+                DisplayPanel.Width = Width;
+                DisplayPanel.Height = Height - ButtonHeight;
             }
         }
     }

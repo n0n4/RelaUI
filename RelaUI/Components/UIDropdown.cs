@@ -80,12 +80,23 @@ namespace RelaUI.Components
             PopupPanel.y = dy + Height;
         }
 
-        public override void OnAdded()
+        protected override void SelfPreInit()
         {
-            base.OnAdded();
+            base.SelfPreInit();
 
             // make the popup panel belong to the root
-            System.Add(PopupPanel);
+            if (PopupPanel.Parent == null && PopupPanel.System == null)
+            {
+                UIComponent root = GetRoot();
+                if (root.System != null)
+                {
+                    root.System.Add(PopupPanel);
+                }
+                else
+                {
+                    root.Add(PopupPanel);
+                }
+            }
         }
     }
 }
