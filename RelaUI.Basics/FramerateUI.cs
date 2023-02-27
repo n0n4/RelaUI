@@ -25,7 +25,7 @@ namespace RelaUI.Basics
 
         // todo: look up way of making strings without garbage
 
-        public FrameRateUI(UIStyle style, GraphicsDevice g, string font = "NotoMono-Regular", int? fontsize = 14)
+        public FrameRateUI(UIStyle style, GraphicsDevice g, string font = "NotoMono-Regular", int? fontsize = 14, bool enabled = true)
         {
             GraphicsDevice = g;
             UISystem = new UISystem(g);
@@ -34,9 +34,11 @@ namespace RelaUI.Basics
             UISystem.Add(FRListener);
 
             FRLabel = new UILabel(g.PresentationParameters.BackBufferWidth, 0, 100, 12, "TTT", font: font, fontsize: fontsize);
+            FRLabel.Visible = enabled;
             UISystem.Add(FRLabel);
 
             DRLabel = new UILabel(g.PresentationParameters.BackBufferWidth, 12, 100, 12, "TTT", font: font, fontsize: fontsize);
+            DRLabel.Visible = enabled;
             FRListener.AttachedLabel = DRLabel;
             UISystem.Add(DRLabel);
             DRLabel.EventPostInit += (s, e) =>

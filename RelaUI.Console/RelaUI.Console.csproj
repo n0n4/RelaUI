@@ -1,12 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>RelaUI Console</Title>
+    <Authors>n0n4</Authors>
+    <PackageProjectUrl>https://github.com/n0n4/RelaUI</PackageProjectUrl>
+    <Description>UI Framework for Monogame (Use RelaUI.Integration)</Description>
+    <RepositoryUrl>https://github.com/n0n4/RelaUI</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>MonoGame;UI</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageVersion>$([System.DateTime]::Now.ToString("yyyy.MM.dd.HHmmss"))</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RelaUI.Utilities\RelaUI.Utilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 </Project>
