@@ -116,7 +116,8 @@ namespace RelaUI
                 }
 
                 DrawText(g, s, font, totalWidth + x, y, subtext, settings, totalWidth);
-                totalWidth += TextHelper.GetWidth(font, subtext, settings, totalWidth);
+                // unsafe justification: expect text to be sanitized by the time it reaches draw
+                totalWidth += TextHelper.GetWidthUnsafe(font, subtext, settings, totalWidth);
             }
         }
 

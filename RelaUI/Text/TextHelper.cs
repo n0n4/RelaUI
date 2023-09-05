@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,8 +10,12 @@ namespace RelaUI.Text
     {
         public const string Tab = "    ";
 
-        public static Tuple<int, int> GetSize(RelaFont font, string text, TextSettings settings)
+        private static Dictionary<char, string> CharToString = new Dictionary<char, string>();
+        private static Dictionary<char, Dictionary<char, string>> SurrogatesToString = new Dictionary<char, Dictionary<char, string>>();
+
+        public static Tuple<int, int> GetSize(RelaFont font, RenderedText rendered, TextSettings settings)
         {
+            string text = rendered.Render(font);
             if (font.IsDynamic)
             {
                 if (settings != null && settings.Monospaced)
@@ -27,7 +32,16 @@ namespace RelaUI.Text
             return new Tuple<int, int>((int)Math.Ceiling(font.SFont.MeasureString(text).X), (int)Math.Ceiling(font.SFont.MeasureString(text).Y));
         }
 
-        public static int GetWidth(RelaFont font, string text, TextSettings settings, int prevTabDistance = 0)
+        public static int GetWidth(RelaFont font, RenderedText rendered, TextSettings settings, int prevTabDistance = 0)
+        {
+            string text = rendered.Render(font);
+            return GetWidth(font, text, settings, prevTabDistance);
+        }
+        public static int GetWidthUnsafe(RelaFont font, string text, TextSettings settings, int prevTabDistance = 0)
+        {
+            return GetWidth(font, text, settings, prevTabDistance);
+        }
+        private static int GetWidth(RelaFont font, string text, TextSettings settings, int prevTabDistance = 0)
         {
             if (settings != null && settings.Monospaced)
             {
@@ -55,53 +69,74 @@ namespace RelaUI.Text
             return (int)Math.Ceiling(font.SFont.MeasureString(text).X);
         }
 
-        public static int GetWidthMultiStyles(RelaFont font, string text,
-            TextSettings[] settingsStyles, int[] styleSwitchIndices, int[] styleSwitchStyles)
+        public static int GetWidthMultiStyles(RelaFont font, RenderedText rendered,
+            TextSettings[] settingsStyles, int[] styleSwitchIndices, int[] styleSwitchStyles,
+            int? start = null, int? length = null)
         {
+            string text = rendered.Render(font);
             int totalWidth = 0;
             for (int styleIndex = 0; styleIndex < styleSwitchIndices.Length; styleIndex++)
             {
                 int pos = styleSwitchIndices[styleIndex];
+                if (start != null && pos < start)
+                {
+                    pos = start.Value;
+                    if (styleIndex + 1 < styleSwitchIndices.Length && pos >= styleSwitchIndices[styleIndex + 1])
+                        continue; // start pos is not in this styleswitch
+                }
                 if (pos >= text.Length)
                     continue; // skip this pos, it's out of bounds
                 TextSettings settings = settingsStyles[styleSwitchStyles[styleIndex]];
 
                 string subtext = null;
+                int nextpos = text.Length;
                 if (styleIndex + 1 < styleSwitchIndices.Length)
                 {
-                    int nextpos = styleSwitchIndices[styleIndex + 1];
+                    nextpos = styleSwitchIndices[styleIndex + 1];
                     if (nextpos >= text.Length)
                         nextpos = text.Length;
-                    if (nextpos <= pos)
-                        continue; // skip this pos, the next one is right on top of it
-
-                    subtext = text.Substring(pos, nextpos - pos);
                 }
-                else
+                if (length != null)
                 {
-                    subtext = text.Substring(pos);
+                    length -= (nextpos - pos);
+                    if (length < 0)
+                    {
+                        nextpos += length.Value;
+                    }
                 }
+                if (nextpos <= pos)
+                    continue; // skip this pos, the next one is right on top of it
+
+                subtext = text.Substring(pos, nextpos - pos);
                 
                 totalWidth += TextHelper.GetWidth(font, subtext, settings, totalWidth);
+                if (length != null && length <= 0)
+                    break;
             }
             return totalWidth;
         }
 
-        public static int GetWidthMultiStyles(RelaFont font, string text,
-            TextStyles styles)
+        public static int GetWidthMultiStyles(RelaFont font, RenderedText rendered,
+            TextStyles styles, int? start = null, int? length = null)
         {
-            return GetWidthMultiStyles(font, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles);
+            return GetWidthMultiStyles(font, rendered, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, start, length);
         }
 
-        public static int GetHeight(RelaFont font, string text, TextSettings settings)
+        public static int GetHeight(RelaFont font, RenderedText rendered, TextSettings settings)
+        {
+            string text = rendered.Render(font);
+            return GetHeight(font, text, settings);
+        }
+        private static int GetHeight(RelaFont font, string text, TextSettings settings)
         {
             if (font.IsDynamic)
                 return (int)Math.Ceiling(font.DFont.MeasureString(text).Y);
             return (int)Math.Ceiling(font.SFont.MeasureString(text).Y);
         }
 
-        public static int DetermineHeightFromWidth(RelaFont font, string text, TextSettings settings, int width, bool splitwords = false)
+        public static int DetermineHeightFromWidth(RelaFont font, RenderedText rendered, TextSettings settings, int width, bool splitwords = false)
         {
+            string text = rendered.Render(font);
             List<string> TextLines = TextHelper.FitToBox(font, text, width, 0, settings, splitwords);
             return TextLines.Count * GetHeight(font, text, settings);
         }
@@ -127,7 +162,12 @@ namespace RelaUI.Text
         // TODO: this doesn't use the height at all, you need to manually remove the overflow lines afterwards
         // this should be refactored so that the height is an optional parameter and if it is passed in
         // it will automatically remove overflow lines
-        public static List<string> FitToBox(RelaFont font, string text, int w, int h, TextSettings settings, bool splitwords = false)
+        public static List<string> FitToBox(RelaFont font, RenderedText render, int w, int h, TextSettings settings, bool splitwords = false)
+        {
+            string text = render.Render(font);
+            return FitToBox(font, text, w, h, settings, splitwords);
+        }
+        private static List<string> FitToBox(RelaFont font, string text, int w, int h, TextSettings settings, bool splitwords = false)
         {
             List<string> outs = new List<string>();
             if (text.Length <= 1)
@@ -229,6 +269,33 @@ namespace RelaUI.Text
             }
             outs.Add(text.Substring(cstart));
             return outs;
+        }
+
+        public static string GetCharToString(char c)
+        {
+            if (CharToString.TryGetValue(c, out string result))
+                return result;
+            string converted = "" + c;
+            CharToString.Add(c, converted);
+            return converted;
+        }
+
+        public static string GetSurrogatesToString(char c1, char c2)
+        {
+            if (SurrogatesToString.TryGetValue(c1, out var dict))
+            {
+                if (dict.TryGetValue(c2, out string result))
+                    return result;
+                string combined = "" + c1 + c2;
+                dict.Add(c2, combined);
+                return combined;
+            }
+
+            string c1c2 = "" + c1 + c2;
+            Dictionary<char, string> newDict = new Dictionary<char, string>();
+            newDict.Add(c2, c1c2);
+            SurrogatesToString.Add(c1, newDict);
+            return c1c2;
         }
     }
 }

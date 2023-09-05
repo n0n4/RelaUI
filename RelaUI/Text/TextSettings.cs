@@ -44,7 +44,8 @@ namespace RelaUI.Text
                 char[] test = new char[] { '_', '@', '#', ' ', '%', 'O', 'M', 'W' };
                 foreach (char c in test)
                 {
-                    int size = TextHelper.GetWidth(f, "" + c, null);
+                    // unsafe justification: limited charset that should always be valid
+                    int size = TextHelper.GetWidthUnsafe(f, "" + c, null);
                     if (size > MonospaceSize)
                     {
                         MonospaceSize = size;

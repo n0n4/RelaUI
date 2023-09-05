@@ -30,6 +30,7 @@ namespace RelaUI.Components
         public Color ScrollBarColor;
         private bool WasScrollingVert = false;
         private bool WasScrollingHorz = false;
+        private bool IsDragScrolling = false;
 
         public string PlaceholderText = string.Empty;
         public Color PlaceholderColor;
@@ -53,6 +54,7 @@ namespace RelaUI.Components
         private int HighlightEndLine = 0;
         private int HighlightStartPos = 0;
         private int HighlightEndPos = 0;
+        private bool ForceHighlightAll = false;
         public Color HighlightColor;
 
         // for multiline: these are used to track what lines are visible and what
@@ -60,8 +62,10 @@ namespace RelaUI.Components
         private float WindowX = 0;
         private float WindowY = 0;
 
-        private List<string> TextLines = new List<string>() { "" }; // only for multiline
+        private RenderedTextLines RenderedTextLines = new RenderedTextLines();
         private string TextField = string.Empty;
+        private RenderedText RenderedText = new RenderedText();
+        private StringBuilder MultiLineStringBuilder;
         public string Text
         {
             get
@@ -72,12 +76,21 @@ namespace RelaUI.Components
                 }
                 else
                 {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < TextLines.Count; i++)
+                    if (MultiLineStringBuilder == null)
                     {
-                        sb.AppendLine(TextLines[i]);
+                        MultiLineStringBuilder = new StringBuilder();
                     }
-                    return sb.ToString();
+                    else
+                    {
+                        MultiLineStringBuilder.Clear();
+                    }
+                    for (int i = 0; i < RenderedTextLines.Count(); i++)
+                    {
+                        MultiLineStringBuilder.AppendLine(RenderedTextLines.GetLine(i).Text);
+                    }
+                    string text = MultiLineStringBuilder.ToString();
+                    RenderedText.Text = text;
+                    return text;
                 }
             }
             private set
@@ -85,10 +98,12 @@ namespace RelaUI.Components
                 if (!MultiLine)
                 {
                     TextField = value;
+                    RenderedText.Text = value;
                 }
                 else
                 {
-                    TextLines = value.SplitByLines();
+                    RenderedText.Text = value;
+                    RenderedTextLines.SetAll(value);
                 }
             }
         }
@@ -243,16 +258,14 @@ namespace RelaUI.Components
                 int tend = 0;
                 if (!MultiLine)
                 {
-                    string comparetext = Text;
-
-                    int textwidth = TextHelper.GetWidthMultiStyles(SFont, comparetext, ComputedStyles[0]);
+                    int textwidth = TextHelper.GetWidthMultiStyles(SFont, RenderedText, ComputedStyles[0]);
                     int maxwidth = Width - (HasBorder ? BorderWidth * 2 : 0) - 4;
-                    tend = comparetext.Length;
+                    tend = Text.Length;
                     if (textwidth > maxwidth)
                     {
-                        int wperc = textwidth / comparetext.Length;
+                        int wperc = textwidth / Text.Length;
                         int cs = maxwidth / wperc;
-                        int postcaretcs = comparetext.Length - CaretPosition;
+                        int postcaretcs = Text.Length - CaretPosition;
                         int precaretcs = CaretPosition;
                         if (postcaretcs < cs)
                         {
@@ -280,7 +293,7 @@ namespace RelaUI.Components
                         }
 
                         while ((tend - tstart > 0) 
-                            && TextHelper.GetWidthMultiStyles(SFont, comparetext.Substring(tstart, tend - tstart), ComputedStyles[0]) > maxwidth)
+                            && TextHelper.GetWidthMultiStyles(SFont, RenderedText, ComputedStyles[0], tstart, tend - tstart) > maxwidth)
                         {
                             if (postcaretcs < cs)
                             {
@@ -327,8 +340,8 @@ namespace RelaUI.Components
 
                             int hstartx = 0;
                             if (h1pos != tstart)
-                                hstartx = TextHelper.GetWidthMultiStyles(SFont, Text.Substring(tstart, h1pos - tstart), adjustedStyles);
-                            int hendx = TextHelper.GetWidthMultiStyles(SFont, Text.Substring(tstart, h2pos - tstart), adjustedStyles);
+                                hstartx = TextHelper.GetWidthMultiStyles(SFont, RenderedText, adjustedStyles, tstart, h1pos - tstart);
+                            int hendx = TextHelper.GetWidthMultiStyles(SFont, RenderedText, adjustedStyles, tstart, h2pos - tstart);
 
                             Draw.DrawRectangleHandle(sb,
                                 (int)(dx + BorderWidth + 2 + hstartx),
@@ -348,7 +361,7 @@ namespace RelaUI.Components
                         float caretx = 0;
                         if (CaretPosition - tstart > 0)
                         {
-                            caretx = TextHelper.GetWidthMultiStyles(SFont, Text.Substring(tstart, CaretPosition - tstart), ComputedStyles[0]);//SFont.MeasureString(Text.Substring(tstart, CaretPosition - tstart)).X;
+                            caretx = TextHelper.GetWidthMultiStyles(SFont, RenderedText, ComputedStyles[0], tstart, CaretPosition - tstart);//SFont.MeasureString(Text.Substring(tstart, CaretPosition - tstart)).X;
                         }
                         Draw.DrawRectangleHandle(sb, (int)(dx + BorderWidth + 2 + caretx), (int)(dy + mod), 2, SFont.LineSpacing, TextColor);
                     }
@@ -365,7 +378,8 @@ namespace RelaUI.Components
 
                             for (int i = h1line; i <= h2line; i++)
                             {
-                                string htext = TextLines[i];
+                                RenderedText hrendered = RenderedTextLines.GetLine(i);
+                                string htext = hrendered.Text;
                                 int hstart = 0;
                                 int hend = htext.Length;
                                 if (i == h1line) hstart = h1pos;
@@ -376,8 +390,8 @@ namespace RelaUI.Components
 
                                 int hstartx = 0;
                                 if (hstart != 0)
-                                    hstartx = TextHelper.GetWidthMultiStyles(SFont, htext.Substring(0, hstart), ComputedStyles[i]);
-                                int hendx = TextHelper.GetWidthMultiStyles(SFont, htext.Substring(0, hend), ComputedStyles[i]);
+                                    hstartx = TextHelper.GetWidthMultiStyles(SFont, hrendered, ComputedStyles[i], 0, hstart);
+                                int hendx = TextHelper.GetWidthMultiStyles(SFont, hrendered, ComputedStyles[i], 0, hend);
 
                                 Draw.DrawRectangleHandle(sb,
                                     (int)(dx + BorderWidth + 2 + hstartx - WindowX),
@@ -388,9 +402,9 @@ namespace RelaUI.Components
                             }
                         }
 
-                        for (int i = 0; i < TextLines.Count; i++)
+                        for (int i = 0; i < RenderedTextLines.Count(); i++)
                         {
-                            string line = TextLines[i];
+                            string line = RenderedTextLines.GetLine(i).Render(SFont);
                             Draw.DrawTextMultiStyles(g, sb, SFont, dx + BorderWidth + 2 - WindowX, dy + mod + (textheight * i) - WindowY, line, ComputedStyles[i]);
                         }
 
@@ -400,7 +414,7 @@ namespace RelaUI.Components
                             float carety = textheight * CaretLine;
                             if (CaretPosition > 0)
                             {
-                                caretx = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                                caretx = TextHelper.GetWidthMultiStyles(SFont, RenderedTextLines.GetLine(CaretLine), ComputedStyles[CaretLine], 0, CaretPosition);
                             }
                             Draw.DrawRectangleHandle(sb, (int)(dx + BorderWidth + 2 + caretx - WindowX), (int)(dy + mod + carety - WindowY), 2, SFont.LineSpacing, TextColor);
                         }
@@ -486,9 +500,9 @@ namespace RelaUI.Components
             {
                 if (!first)
                 {
-                    string curtext = TextLines[CaretLine];
-                    TextLines.Insert(CaretLine + 1, curtext.Substring(CaretPosition));
-                    TextLines[CaretLine] = curtext.Substring(0, CaretPosition);
+                    string curtext = RenderedTextLines.GetLine(CaretLine).Text;
+                    RenderedTextLines.Insert(CaretLine + 1, curtext.Substring(CaretPosition));
+                    RenderedTextLines.Set(CaretLine, curtext.Substring(0, CaretPosition));
                     CaretLine++;
                     CaretPosition = 0;
                 }
@@ -496,27 +510,27 @@ namespace RelaUI.Components
                 {
                     first = false;
                 }
-                string tl = TextLines[CaretLine];
+                string tl = RenderedTextLines.GetLine(CaretLine).Text;
                 if (tl.Length == 0)
                 {
-                    TextLines[CaretLine] = add;
+                    RenderedTextLines.Set(CaretLine, add);
                 }
                 else if (CaretPosition == tl.Length)
                 {
-                    TextLines[CaretLine] += add;
+                    RenderedTextLines.Set(CaretLine, RenderedTextLines.GetLine(CaretLine).Text + add);
                 }
                 else if (CaretPosition == 0)
                 {
-                    TextLines[CaretLine] = add + tl;
+                    RenderedTextLines.Set(CaretLine, add + tl);
                 }
                 else if (CaretPosition > 0 && CaretPosition < tl.Length)
                 {
-                    TextLines[CaretLine] = tl.Substring(0, CaretPosition) + add + tl.Substring(CaretPosition);
+                    RenderedTextLines.Set(CaretLine, tl.Substring(0, CaretPosition) + add + tl.Substring(CaretPosition));
                 }
                 CaretPosition += add.Length;
-                if (CaretPosition > TextLines[CaretLine].Length)
+                if (CaretPosition > RenderedTextLines.GetLine(CaretLine).Text.Length)
                 {
-                    CaretPosition = TextLines[CaretLine].Length;
+                    CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
                 }
             }
         }
@@ -554,23 +568,23 @@ namespace RelaUI.Components
                 }
                 else if (dodelete)
                 {
-                    string tl = TextLines[CaretLine];
+                    string tl = RenderedTextLines.GetLine(CaretLine).Text;
                     if (tl.Length > CaretPosition + 1)
                     {
-                        TextLines[CaretLine] = tl.Substring(0, CaretPosition) + tl.Substring(CaretPosition + 1);
+                        RenderedTextLines.Set(CaretLine, tl.Substring(0, CaretPosition) + tl.Substring(CaretPosition + 1));
                     }
                     else if (tl.Length == CaretPosition + 1)
                     {
-                        TextLines[CaretLine] = tl.Substring(0, CaretPosition);
+                        RenderedTextLines.Set(CaretLine, tl.Substring(0, CaretPosition));
                     }
                     else
                     {
                         // remove the next line
-                        if (CaretLine + 1 < TextLines.Count)
+                        if (CaretLine + 1 < RenderedTextLines.Count())
                         {
-                            int origlen = TextLines[CaretLine].Length;
-                            TextLines[CaretLine] += TextLines[CaretLine + 1];
-                            TextLines.RemoveAt(CaretLine + 1);
+                            int origlen = RenderedTextLines.GetLine(CaretLine).Text.Length;
+                            RenderedTextLines.Set(CaretLine, RenderedTextLines.GetLine(CaretLine).Text + RenderedTextLines.GetLine(CaretLine + 1).Text);
+                            RenderedTextLines.RemoveAt(CaretLine + 1);
                             changedLines = true;
                             CaretPosition = origlen;
                         }
@@ -578,10 +592,10 @@ namespace RelaUI.Components
                 }
                 else
                 {
-                    string tl = TextLines[CaretLine];
+                    string tl = RenderedTextLines.GetLine(CaretLine).Text;
                     if (tl.Length > 0 && CaretPosition > 0)
                     {
-                        TextLines[CaretLine] = tl.Substring(0, CaretPosition - 1) + tl.Substring(CaretPosition);
+                        RenderedTextLines.Set(CaretLine, tl.Substring(0, CaretPosition - 1) + tl.Substring(CaretPosition));
                         CaretPosition--;
                     }
                     else
@@ -589,9 +603,9 @@ namespace RelaUI.Components
                         // remove the new line
                         if (CaretLine > 0)
                         {
-                            int origlen = TextLines[CaretLine - 1].Length;
-                            TextLines[CaretLine - 1] += TextLines[CaretLine];
-                            TextLines.RemoveAt(CaretLine);
+                            int origlen = RenderedTextLines.GetLine(CaretLine - 1).Text.Length;
+                            RenderedTextLines.Set(CaretLine - 1, RenderedTextLines.GetLine(CaretLine - 1).Text + RenderedTextLines.GetLine(CaretLine).Text);
+                            RenderedTextLines.RemoveAt(CaretLine);
                             CaretLine--;
                             changedLines = true;
                             CaretPosition = origlen;
@@ -616,19 +630,21 @@ namespace RelaUI.Components
             }
 
             // handle tabs
+            bool ignoreTabs = false;
             if (input.TabFresh())
             {
-                if (MultiLine && Highlighting)
+                if (MultiLine && Highlighting && HighlightStartLine != HighlightEndLine)
                 {
                     // special case: tab all at once
                     if (!input.ShiftDown())
                         TabHighlighted();
                     else
                         ShiftTabHighlighted();
+                    ignoreTabs = true;
                 }
             }
 
-            int ordercount = input.FreshWriting(WritingOrders, true);
+            int ordercount = input.FreshWriting(WritingOrders, true, ignoreTabs);
 
             // handle duplicate
             if (input.CtrlDown() && input.IsKeyFresh(Keys.D))
@@ -638,7 +654,7 @@ namespace RelaUI.Components
                     WritingOrders[ordercount] = new InputManager.WritingOrder()
                     {
                         Add = GetHighlightedText(),
-                        Order = InputManager.eWritingOrder.ADD
+                        Order = InputManager.eWritingOrder.ADDTOEND
                     };
                     ordercount++;
                     skipDeleteHighlight = true;
@@ -647,8 +663,8 @@ namespace RelaUI.Components
                 {
                     WritingOrders[ordercount] = new InputManager.WritingOrder()
                     {
-                        Add = "\n" + TextLines[CaretLine],
-                        Order = InputManager.eWritingOrder.ADD
+                        Add = "\n" + RenderedTextLines.GetLine(CaretLine).Text,
+                        Order = InputManager.eWritingOrder.ADDTOEND
                     };
                     ordercount++;
                 }
@@ -667,17 +683,32 @@ namespace RelaUI.Components
             // process the orders
             if (ordercount > 0)
             {
-                if (Highlighting && !skipDeleteHighlight)
-                    DeleteHighlighted();
-
                 bool first = true;
                 for (int i = 0; i < ordercount; i++)
                 {
                     first = true;
                     InputManager.WritingOrder order = WritingOrders[i];
 
-                    if (order.Order == InputManager.eWritingOrder.ADD)
+                    if (order.Order == InputManager.eWritingOrder.ADD || order.Order == InputManager.eWritingOrder.ADDTOEND)
                     {
+                        if (order.Order == InputManager.eWritingOrder.ADDTOEND)
+                        {
+                            if (Highlighting)
+                            {
+                                OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos);
+                                Highlighting = false;
+                                CaretLine = h2line;
+                                CaretPosition = h2pos;
+                            }
+                            else if (MultiLine)
+                            {
+                                CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
+                            }
+                        }
+
+                        if (Highlighting && !skipDeleteHighlight)
+                            DeleteHighlighted();
+
                         if (order.Add.Contains("\n") || order.Add.Contains("\r"))
                         {
                             changed = true;
@@ -696,12 +727,20 @@ namespace RelaUI.Components
                     else if (order.Order == InputManager.eWritingOrder.BACKSPACE)
                     {
                         changed = true;
-                        ProcessBackspace(false, ref changedLines);
+
+                        if (Highlighting && !skipDeleteHighlight)
+                            DeleteHighlighted();
+                        else
+                            ProcessBackspace(false, ref changedLines);
                     }
                     else if (order.Order == InputManager.eWritingOrder.DELETE)
                     {
                         changed = true;
-                        ProcessBackspace(true, ref changedLines);
+
+                        if (Highlighting && !skipDeleteHighlight)
+                            DeleteHighlighted();
+                        else
+                            ProcessBackspace(true, ref changedLines);
                     }
                     else if (order.Order == InputManager.eWritingOrder.LEFT)
                     {
@@ -712,12 +751,19 @@ namespace RelaUI.Components
                             if (MultiLine && CaretLine > 0)
                             {
                                 CaretLine--;
-                                CaretPosition = TextLines[CaretLine].Length;
+                                CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
                             }
                             else
                             {
                                 CaretPosition = 0;
                             }
+                        }
+
+                        if (Highlighting)
+                        {
+                            CaretPosition = HighlightStartPos;
+                            if (MultiLine)
+                                CaretLine = HighlightStartLine;
                         }
                         input.CaptureInput(Keys.Left);
                         Highlighting = false; // breaks highlight
@@ -735,16 +781,16 @@ namespace RelaUI.Components
                         }
                         else
                         {
-                            if (CaretPosition > TextLines[CaretLine].Length)
+                            if (CaretPosition > RenderedTextLines.GetLine(CaretLine).Text.Length)
                             {
-                                if (CaretLine < TextLines.Count - 1)
+                                if (CaretLine < RenderedTextLines.Count() - 1)
                                 {
                                     CaretLine++;
                                     CaretPosition = 0;
                                 }
                                 else
                                 {
-                                    CaretPosition = TextLines[CaretLine].Length;
+                                    CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
                                 }
                             }
                         }
@@ -754,7 +800,7 @@ namespace RelaUI.Components
                     else if (order.Order == InputManager.eWritingOrder.UP && MultiLine)
                     {
                         CaretBlinking = false; // keep caret visible
-                        int oldcaretlen = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                        int oldcaretlen = TextHelper.GetWidthMultiStyles(SFont, RenderedTextLines.GetLine(CaretLine), ComputedStyles[CaretLine], 0, CaretPosition);
                         CaretLine--;
                         if (CaretLine < 0)
                         {
@@ -763,7 +809,7 @@ namespace RelaUI.Components
                         changedLines = true;
 
                         // determine new caret position based on the old one
-                        CaretPosition = DeterminePositionWithinLine(TextLines[CaretLine], oldcaretlen, ComputedStyles[CaretLine]);
+                        CaretPosition = DeterminePositionWithinLine(RenderedTextLines.GetLine(CaretLine), oldcaretlen, ComputedStyles[CaretLine]);
 
                         input.CaptureInput(Keys.Up);
 
@@ -772,16 +818,16 @@ namespace RelaUI.Components
                     else if (order.Order == InputManager.eWritingOrder.DOWN && MultiLine)
                     {
                         CaretBlinking = false; // keep caret visible
-                        int oldcaretlen = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                        int oldcaretlen = TextHelper.GetWidthMultiStyles(SFont, RenderedTextLines.GetLine(CaretLine), ComputedStyles[CaretLine], 0, CaretPosition);
                         CaretLine++;
-                        if (CaretLine >= TextLines.Count)
+                        if (CaretLine >= RenderedTextLines.Count())
                         {
-                            CaretLine = TextLines.Count - 1;
+                            CaretLine = RenderedTextLines.Count() - 1;
                         }
                         changedLines = true;
 
                         // determine new caret position based on the old one
-                        CaretPosition = DeterminePositionWithinLine(TextLines[CaretLine], oldcaretlen, ComputedStyles[CaretLine]);
+                        CaretPosition = DeterminePositionWithinLine(RenderedTextLines.GetLine(CaretLine), oldcaretlen, ComputedStyles[CaretLine]);
 
                         input.CaptureInput(Keys.Up);
 
@@ -791,9 +837,16 @@ namespace RelaUI.Components
             }
             
             // fix caret if we changed lines
-            if (MultiLine && changedLines && CaretPosition > TextLines[CaretLine].Length)
+            if (MultiLine && changedLines && CaretPosition > RenderedTextLines.GetLine(CaretLine).Text.Length)
             {
-                CaretPosition = TextLines[CaretLine].Length;
+                CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
+            }
+
+            // handle select all
+            if (input.CtrlDown() && input.IsKeyFresh(Keys.A))
+            {
+                ForceHighlightAll = true;
+                input.CaptureInput(Keys.A);
             }
 
             // handle copy
@@ -893,19 +946,19 @@ namespace RelaUI.Components
                                 CaretLine = 0;
                                 CaretPosition = 0;
                             }
-                            else if (mline >= TextLines.Count)
+                            else if (mline >= RenderedTextLines.Count())
                             {
                                 // trivial case; clicking after end of text
                                 // place cursor at very end of text
-                                CaretLine = TextLines.Count - 1;
-                                CaretPosition = TextLines[CaretLine].Length;
+                                CaretLine = RenderedTextLines.Count() - 1;
+                                CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
                             }
                             else
                             {
                                 // move cursor to selected line
                                 CaretLine = mline;
                                 // determine which position to place caret within the line
-                                CaretPosition = DeterminePositionWithinLine(TextLines[CaretLine], (int)(mx - Lastdx - BorderWidth), ComputedStyles[CaretLine]);
+                                CaretPosition = DeterminePositionWithinLine(RenderedTextLines.GetLine(CaretLine), (int)(mx - Lastdx - BorderWidth), ComputedStyles[CaretLine]);
                             }
 
                             // continue highlighting
@@ -930,6 +983,7 @@ namespace RelaUI.Components
                     WasScrollingHorz = false;
                     WasScrollingVert = false;
                     MouseWasDown = false;
+                    IsDragScrolling = false;
                 }
 
                 // if the line changed, make sure it's visible
@@ -959,7 +1013,7 @@ namespace RelaUI.Components
                         ComputeStyles();
                         SkipNextCompute = true;
                     }
-                    float caretx = TextHelper.GetWidthMultiStyles(SFont, TextLines[CaretLine].Substring(0, CaretPosition), ComputedStyles[CaretLine]);
+                    float caretx = TextHelper.GetWidthMultiStyles(SFont, RenderedTextLines.GetLine(CaretLine), ComputedStyles[CaretLine], 0, CaretPosition);
                     int mincaretbuffer = 15; // must have at least this many pixels on the other side of the 
                     if (caretx - WindowX - mincaretbuffer < 0)
                     {
@@ -1006,7 +1060,7 @@ namespace RelaUI.Components
                         }
 
                         // if mouse is inside our box, figure out where and place caret appropriately
-                        CaretPosition = TStartAtStartOfScrolling + DeterminePositionWithinLine(Text.Substring(TStartAtStartOfScrolling), (int)(mx - Lastdx - BorderWidth), ComputedStyles[0].Adjust(TStartAtStartOfScrolling));
+                        CaretPosition = TStartAtStartOfScrolling + DeterminePositionWithinLine(RenderedText, (int)(mx - Lastdx - BorderWidth), ComputedStyles[0].Adjust(TStartAtStartOfScrolling), TStartAtStartOfScrolling);
 
                         // continue highlighting
                         if (MouseWasDown && Highlighting)
@@ -1025,6 +1079,19 @@ namespace RelaUI.Components
                     TStartAtStartOfScrolling = -1;
                     MouseWasDown = false;
                 }
+            }
+
+            if (ForceHighlightAll)
+            {
+                Highlighting = true;
+                HighlightStartLine = 0;
+                HighlightStartPos = 0;
+                HighlightEndLine = MultiLine ? RenderedTextLines.Count() : 0;
+                HighlightEndPos = Text.Length;
+                CaretPosition = Text.Length;
+                // keep forcing this until the mouse lets up
+                if (!input.MouseDown(eMouseButtons.Left))
+                    ForceHighlightAll = false;
             }
 
             // trigger text changed event if any modifications occured
@@ -1050,7 +1117,7 @@ namespace RelaUI.Components
                 if (MultiLine)
                 {
                     // copy the current line
-                    Clipboard.Set(TextLines[CaretLine]);
+                    Clipboard.Set(RenderedTextLines.GetLine(CaretLine).Text);
                 }
                 else
                 {
@@ -1072,12 +1139,12 @@ namespace RelaUI.Components
                 if (MultiLine)
                 {
                     // copy the current line
-                    Clipboard.Set(TextLines[CaretLine]);
-                    TextLines.RemoveAt(CaretLine);
+                    Clipboard.Set(RenderedTextLines.GetLine(CaretLine).Text);
+                    RenderedTextLines.RemoveAt(CaretLine);
                     CaretLine--;
                     if (CaretLine < 0) CaretLine = 0;
-                    if (TextLines.Count <= 0) TextLines.Add("");
-                    CaretPosition = TextLines[CaretLine].Length;
+                    if (RenderedTextLines.Count() <= 0) RenderedTextLines.Add("");
+                    CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
                     ComputeStyles();
                 }
                 else
@@ -1095,7 +1162,7 @@ namespace RelaUI.Components
 
             for (int i = h1line; i <= h2line; i++)
             {
-                TextLines[i] = "\t" + TextLines[i];
+                RenderedTextLines.Set(i, "\t" + RenderedTextLines.GetLine(i).Text);
             }
 
             // account for added tab
@@ -1113,9 +1180,9 @@ namespace RelaUI.Components
 
             for (int i = h1line; i <= h2line; i++)
             {
-                if (TextLines[i].StartsWith('\t'))
+                if (RenderedTextLines.GetLine(i).Text.StartsWith('\t'))
                 {
-                    TextLines[i] = TextLines[i].Substring(1);
+                    RenderedTextLines.Set(i, RenderedTextLines.GetLine(i).Text.Substring(1));
                     if (i == h1line)
                         changedFirst = true;
                     if (i == h2line)
@@ -1147,23 +1214,23 @@ namespace RelaUI.Components
                 OrderHighlights(out int h1line, out int h2line, out int h1pos, out int h2pos);
 
                 // trim start
-                int h1end = TextLines[h1line].Length;
+                int h1end = RenderedTextLines.GetLine(h1line).Text.Length;
                 if (h2line == h1line)
                     h1end = h2pos;
-                TextLines[h1line] = TextLines[h1line].CutOut(h1pos, h1end);
+                RenderedTextLines.Set(h1line, RenderedTextLines.GetLine(h1line).Text.CutOut(h1pos, h1end));
 
                 // trim end
                 if (h2line != h1line)
                 {
-                    TextLines[h2line] = TextLines[h2line].CutOut(0, h2pos);
+                    RenderedTextLines.Set(h2line, RenderedTextLines.GetLine(h2line).Text.CutOut(0, h2pos));
                     // append last line to start line
-                    TextLines[h1line] += TextLines[h2line];
-                    TextLines.RemoveAt(h2line);
+                    RenderedTextLines.Set(h1line, RenderedTextLines.GetLine(h1line).Text + RenderedTextLines.GetLine(h2line).Text);
+                    RenderedTextLines.RemoveAt(h2line);
                 }
 
                 // trim lines inbetween
                 for (int i = h2line - 1; i > h1line; i--)
-                    TextLines.RemoveAt(i);
+                    RenderedTextLines.RemoveAt(i);
 
                 CaretLine = h1line;
                 CaretPosition = h1pos;
@@ -1198,22 +1265,22 @@ namespace RelaUI.Components
                 // simple case: same line
                 if (h1line == h2line)
                 {
-                    return TextLines[h1line].Substring(h1pos, h2pos - h1pos);
+                    return RenderedTextLines.GetLine(h1line).Text.Substring(h1pos, h2pos - h1pos);
                 }
 
                 StringBuilder sb = new StringBuilder();
 
                 // append first line
-                sb.AppendLine(TextLines[h1line].Substring(h1pos));
+                sb.AppendLine(RenderedTextLines.GetLine(h1line).Text.Substring(h1pos));
 
                 // append middle lines
                 for (int i = h1line + 1; i < h2line; i++)
                 {
-                    sb.AppendLine(TextLines[i]);
+                    sb.AppendLine(RenderedTextLines.GetLine(i).Text);
                 }
 
                 // append last line
-                sb.Append(TextLines[h2line].Substring(0, h2pos));
+                sb.Append(RenderedTextLines.GetLine(h2line).Text.Substring(0, h2pos));
 
                 return sb.ToString();
             }
@@ -1247,7 +1314,19 @@ namespace RelaUI.Components
             {
                 WasScrollingVert = true;
                 int maxwindowy = GetMaxWindowY();
-                WindowY = (int)(Math.Round((1.0f - (((sfy + sfh) - my) / (sfh))) * (maxwindowy)));
+                int sbarw = GetSliderBarWidth(true);
+                float sliderratio = ((float)(WindowY) / (float)(maxwindowy));
+                float slidery = sfy + (sliderratio * (sfh - sbarw));
+                if (IsDragScrolling || (my >= slidery && my <= slidery + sbarw))
+                {
+                    WindowY += my - input.LastState.MousePos.Y;
+                    IsDragScrolling = true;
+                }
+                else
+                {
+                    WindowY = (int)(Math.Round((1.0f - (((sfy + sfh) - my) / (sfh))) * (maxwindowy)));
+                }
+
                 changed = true;
                 if (WindowY < 0)
                 {
@@ -1281,7 +1360,19 @@ namespace RelaUI.Components
             {
                 WasScrollingHorz = true;
                 int maxwindowx = GetMaxWindowX();
-                WindowX = (int)(Math.Round((1.0f - (((sfx + sfw) - mx) / (sfw))) * (maxwindowx)));
+                int sbarw = GetSliderBarWidth(false);
+                float sliderratio = ((float)(WindowX) / (float)(maxwindowx));
+                float sliderx = sfx + (sliderratio * (sfw - sbarw));
+                if (IsDragScrolling || (mx >= sliderx && mx <= sliderx + sbarw))
+                {
+                    WindowX += mx - input.LastState.MousePos.X;
+                    IsDragScrolling = true;
+                }
+                else
+                {
+                    WindowX = (int)(Math.Round((1.0f - (((sfx + sfw) - mx) / (sfw))) * (maxwindowx)));
+                }
+
                 changed = true;
                 if (WindowX < 0)
                 {
@@ -1299,15 +1390,15 @@ namespace RelaUI.Components
         {
             int linespacing = SFont.LineSpacing;
             int linesPer = Height / linespacing;
-            return linespacing * (TextLines.Count - ((2 * linesPer) / 3));
+            return linespacing * (RenderedTextLines.Count() - ((2 * linesPer) / 3));
         }
 
         private string GetLongestLine()
         {
             string longest = string.Empty;
-            for (int i = 0; i < TextLines.Count; i++)
-                if (TextLines[i].Length > longest.Length)
-                    longest = TextLines[i];
+            for (int i = 0; i < RenderedTextLines.Count(); i++)
+                if (RenderedTextLines.GetLine(i).Text.Length > longest.Length)
+                    longest = RenderedTextLines.GetLine(i).Text;
             return longest;
         }
 
@@ -1315,26 +1406,29 @@ namespace RelaUI.Components
         {
             string longest = string.Empty;
             int lindex = 0;
-            for (int i = 0; i < TextLines.Count; i++)
+            for (int i = 0; i < RenderedTextLines.Count(); i++)
             {
-                if (TextLines[i].Length > longest.Length)
+                if (RenderedTextLines.GetLine(i).Text.Length > longest.Length)
                 {
-                    longest = TextLines[i];
+                    longest = RenderedTextLines.GetLine(i).Text;
                     lindex = i;
                 }
             }
             return lindex;
         }
 
-        private int DeterminePositionWithinLine(string text, int x, TextStyles styles)
+        private int DeterminePositionWithinLine(RenderedText rendered, int x, TextStyles styles, int? offset = null)
         {
+            string text = rendered.Text;
             // assumes x=0 is start of line
             // first check if we're out of bounds
             if (x <= 0)
                 return 0;
-            int maxlen = TextHelper.GetWidthMultiStyles(SFont, text, styles);
+            int maxlen = TextHelper.GetWidthMultiStyles(SFont, rendered, styles, offset);
             if (x >= maxlen)
                 return text.Length;
+            if (offset == null)
+                offset = 0;
             // try a binary search to discover the closest position
             int min = 0;
             int max = text.Length;
@@ -1343,8 +1437,8 @@ namespace RelaUI.Components
                 if (min == max - 1)
                 {
                     // special case: we're down to two options
-                    int lenmin = TextHelper.GetWidthMultiStyles(SFont, text.Substring(0, min), styles);
-                    int lenmax = TextHelper.GetWidthMultiStyles(SFont, text.Substring(0, max), styles);
+                    int lenmin = TextHelper.GetWidthMultiStyles(SFont, rendered, styles, offset, min);
+                    int lenmax = TextHelper.GetWidthMultiStyles(SFont, rendered, styles, offset, max);
                     int mindist = x - lenmin;
                     int maxdist = lenmax - x;
                     if (mindist < maxdist)
@@ -1354,7 +1448,7 @@ namespace RelaUI.Components
                 }
 
                 int pos = min + ((max - min) / 2);
-                int len = TextHelper.GetWidthMultiStyles(SFont, text.Substring(0, pos), styles);
+                int len = TextHelper.GetWidthMultiStyles(SFont, rendered, styles, offset, pos);
                 if (len > x)
                 {
                     max = pos < max ? pos : max;
@@ -1375,8 +1469,8 @@ namespace RelaUI.Components
         private int GetMaxWindowX()
         {
             int lindex = GetLongestLineIndex();
-            string longest = TextLines[lindex];
-            int len = TextHelper.GetWidthMultiStyles(SFont, longest + "WWW", ComputedStyles[lindex]) + ScrollSize; // add some buffer room
+            RenderedText longest = RenderedTextLines.GetLine(lindex);
+            int len = TextHelper.GetWidthMultiStyles(SFont, longest, ComputedStyles[lindex]) + ScrollSize; // add some buffer room
             len -= Width;
             if (len < 0) len = 0;
             return len;
@@ -1432,10 +1526,10 @@ namespace RelaUI.Components
             }
             else
             {
-                if (CaretLine >= TextLines.Count)
-                    CaretLine = TextLines.Count - 1;
-                if (CaretPosition > TextLines[CaretLine].Length)
-                    CaretPosition = TextLines[CaretLine].Length;
+                if (CaretLine >= RenderedTextLines.Count())
+                    CaretLine = RenderedTextLines.Count() - 1;
+                if (CaretPosition > RenderedTextLines.GetLine(CaretLine).Text.Length)
+                    CaretPosition = RenderedTextLines.GetLine(CaretLine).Text.Length;
                 int maxx = GetMaxWindowX();
                 if (WindowX > maxx)
                     WindowX = maxx;
@@ -1462,16 +1556,16 @@ namespace RelaUI.Components
             ComputedStyles = new List<TextStyles>();
             if (MultiLine)
             {
-                for (int i = 0; i < TextLines.Count; i++)
+                for (int i = 0; i < RenderedTextLines.Count(); i++)
                 {
                     // if we have no styler, use a default styles set
-                    if (TextStyler == null || TextLines[i].Length <= 0)
+                    if (TextStyler == null || RenderedTextLines.GetLine(i).Text.Length <= 0)
                     {
                         ComputedStyles.Add(new TextStyles(new TextSettings[] { FontSettings }, new int[] { 0 }, new int[] { 0 }));
                     }
                     else
                     {
-                        ComputedStyles.Add(TextStyler.GetTextStyles(TextLines[i], FontSettings));
+                        ComputedStyles.Add(TextStyler.GetTextStyles(RenderedTextLines.GetLine(i).Text, FontSettings));
                     }
                 }
             }
@@ -1505,6 +1599,12 @@ namespace RelaUI.Components
                 h2pos = HighlightStartPos;
                 h1pos = HighlightEndPos;
             }
+        }
+
+        public void TakeFocus(bool selectAll)
+        {
+            GetRoot().System.ProposedFocus = this;
+            ForceHighlightAll = selectAll;
         }
 
         // events

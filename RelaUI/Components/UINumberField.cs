@@ -69,7 +69,7 @@ namespace RelaUI.Components
             // set by field to bypass resize since components are not built yet
             WidthField = width;
             HeightField = height;
-            ButtonWidthField = buttonWidth;
+            ButtonWidthField = useButtons ? buttonWidth : 0;
             IsInt = isInt;
             LastValue = initialValue;
 
@@ -201,7 +201,7 @@ namespace RelaUI.Components
                         }
                         else
                         {
-                            Set(intval, elapsedms, input);
+                            Set(intval, elapsedms, input, true);
                         }
                     }
                     else
@@ -213,7 +213,7 @@ namespace RelaUI.Components
                         }
                         else
                         {
-                            Set(doubleval, elapsedms, input);
+                            Set(doubleval, elapsedms, input, true);
                         }
                     }
                 }
@@ -259,7 +259,7 @@ namespace RelaUI.Components
             }
         }
 
-        public void Set(int i, float elapsedms, InputManager input)
+        public void Set(int i, float elapsedms, InputManager input, bool skipSetText = false)
         {
             if (!IsInt)
             {
@@ -274,11 +274,12 @@ namespace RelaUI.Components
 
             IgnoreNext = true;
             LastValue = i.ToString();
-            TextField.SetText(i.ToString(), elapsedms, input);
+            if (!skipSetText)
+                TextField.SetText(i.ToString(), elapsedms, input);
             ValueChanged(elapsedms, input);
         }
 
-        public void Set(double d, float elapsedms, InputManager input)
+        public void Set(double d, float elapsedms, InputManager input, bool skipSetText = false)
         {
             if (IsInt)
             {
@@ -293,7 +294,8 @@ namespace RelaUI.Components
 
             IgnoreNext = true;
             LastValue = d.ToString();
-            TextField.SetText(d.ToString(), elapsedms, null);
+            if (!skipSetText)
+                TextField.SetText(d.ToString(), elapsedms, null);
             ValueChanged(elapsedms, input);
         }
 

@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using RelaUI.DrawHandles;
+using RelaUI.Helpers;
 using RelaUI.Input;
 using RelaUI.Text;
 using RelaUI.Utilities;
@@ -52,42 +53,34 @@ namespace RelaUI.Components
 
         // scrolling works by manipulating the InnerX and InnerY parameters
         public bool HasScrolling = false;
-        private int ScrollWidthField = 100; // the "real" width of the panel
         public int ScrollWidth
         {
-            get { return ScrollWidthField; }
+            get { return Scroller.ScrollWidth; }
             set
             {
-                ScrollWidthField = value;
+                Scroller.ScrollWidth = value;
 
                 Resize();
             }
         }
-        private int ScrollHeightField = 100; // the "real" height of the panel
         public int ScrollHeight
         {
-            get { return ScrollHeightField; }
+            get { return Scroller.ScrollHeight; }
             set
             {
-                ScrollHeightField = value;
+                Scroller.ScrollHeight = value;
 
                 Resize();
             }
         }
 
-        public int ScrollCurrentX = 0; // current x/y pos of scrolling
-        public int ScrollCurrentY = 0;
         public float BaseInnerX = 0;
         public float BaseInnerY = 0;
-        public int ScrollSize = 8; // pixel size of the scroll bar
 
         public bool AutoScrollWidth = false;
         public bool AutoScrollHeight = false;
-        private bool WasScrollingVert = false;
-        private bool WasScrollingHorz = false;
 
-        private float Lastdx = 0; // need to store these for GetFocus
-        private float Lastdy = 0;
+        public Scroller Scroller;
 
         public int InnerMargin = 5;
 
@@ -117,6 +110,9 @@ namespace RelaUI.Components
             Title = title;
             TitleFontSettings.FontName = titlefont;
             TitleFontSettings.FontSize = titlesize;
+
+            Scroller = new Scroller(
+                () => Width, () => Height, () => x, () => y, 0);
 
             if (hasscrolling)
             {
@@ -156,6 +152,8 @@ namespace RelaUI.Components
             InnerY = InnerMargin + GetTitleHeight();
             BaseInnerX = InnerX;
             BaseInnerY = InnerY;
+
+            Scroller.Init(Style);
 
             if (!OldAutoComponents.EqualOrderContent(AutoComponents))
             {
@@ -259,77 +257,19 @@ namespace RelaUI.Components
         {
             Rectangle oldrect = RenderTargetScope.Open(sb, (int)Math.Floor(dx + x), (int)Math.Floor(dy + y), Width, Height);
             {
-                Lastdx = dx;
-                Lastdy = dy;
                 int mx = input.State.MousePos.X;
                 int my = input.State.MousePos.Y;
                 if (HasScrolling)
                 {
-                    InnerX = BaseInnerX - ScrollCurrentX;
-                    InnerY = BaseInnerY - ScrollCurrentY;
+                    InnerX = BaseInnerX - Scroller.OffsetX;
+                    InnerY = BaseInnerY - Scroller.OffsetY;
                 }
                 BaseRender(elapsedms, g, sb, input, dx, dy);
                 // draw scrollbars if needed
                 if (HasScrolling)
                 {
-                    int scw = ScrollSize + (BorderWidth * 2);
-
-                    if (ScrollWidth > Width)
-                    {
-                        float sfx = dx + x + BorderWidth + 2;
-                        float sfy = dy + y + Height - scw - 2 - BorderWidth;
-                        int sfw = Width - (BorderWidth * 2) - 4;
-                        int sfh = scw;
-                        
-                        Draw.DrawRectangleHandle(sb, (int)sfx, (int)sfy, sfw, sfh, TitleBackgroundColor);
-                        Draw.DrawRectangleHandleOutline(sb, (int)sfx, (int)sfy, sfw, sfh, BorderColor, BorderWidth);
-
-                        int sbarw = GetSliderBarWidth(false);
-                        float sliderratio = ((float)(ScrollCurrentX) / (float)((ScrollWidth - Width)));
-                        float sliderx = sfx + (sliderratio * (sfw - sbarw));
-                        Draw.DrawRectangleHandleOutline(sb, (int)sliderx, (int)(sfy + BorderWidth),
-                            GetSliderBarWidth(false), ScrollSize, TitleFontSettings.Color, BorderWidth);
-                        if (mx > sfx && mx < sfx + sfw && my > sfy && my < sfy + sfh)
-                        {
-                            input.Cursor.TrySet(eCursorState.CLICKABLE);
-                        }
-                    }
-                    if (ScrollHeight > Height)
-                    {
-                        int hmod = BorderWidth * 2;
-                        int hstart = BorderWidth + 2;
-                        if (HasTitle)
-                        {
-                            hmod += GetTitleHeight() + 2;
-                            hstart += GetTitleHeight() + 2;
-                        }
-                        if (ScrollWidth > Width)
-                        {
-                            hmod += scw + 6;
-                        }
-                        else
-                        {
-                            hmod += 4;
-                        }
-
-                        float sfx = dx + x + Width - scw - 2 - BorderWidth;
-                        float sfy = dy + y + hstart;
-                        int sfw = scw;
-                        int sfh = Height - hmod;
-                        
-                        Draw.DrawRectangleHandle(sb, (int)sfx, (int)sfy, sfw, sfh, TitleBackgroundColor);
-                        Draw.DrawRectangleHandleOutline(sb, (int)sfx, (int)sfy, sfw, sfh, BorderColor, BorderWidth);
-
-                        int sbarw = GetSliderBarWidth(true);
-                        float sliderratio = ((float)(ScrollCurrentY) / (float)((GetScrollYMax())));
-                        float slidery = sfy + (sliderratio * (sfh - sbarw));
-                        Draw.DrawRectangleHandleOutline(sb, (int)(sfx + BorderWidth), (int)slidery,
-                            ScrollSize, sbarw, TitleFontSettings.Color, BorderWidth);
-                        if (mx > sfx && mx < sfx + sfw && my > sfy && my < sfy + sfh)
-                        {
-                            input.Cursor.TrySet(eCursorState.CLICKABLE);
-                        }
-                    }
+                    Scroller.VerticalOffset = GetTitleHeight() + 2;
+                    Scroller.Render(elapsedms, g, sb, input, dx, dy);
                 }
                 RenderTargetScope.Close(sb, oldrect);
 
@@ -391,7 +331,7 @@ namespace RelaUI.Components
             // check for scrollbars 
             if (HasScrolling)
             {
-                return UpdateScrolling(0, input);
+                return Scroller.PreventChildFocus(dx, dy, input);
             }
             return false;
         }
@@ -401,7 +341,7 @@ namespace RelaUI.Components
             // check for scrollbars 
             if (HasScrolling)
             {
-                UpdateScrolling(elapsedms, input);
+                Scroller.SelfGetFocus(elapsedms, input);
             }
         }
 
@@ -409,17 +349,7 @@ namespace RelaUI.Components
         {
             if (HasScrolling)
             {
-                if (input.MouseDown(eMouseButtons.Left))
-                {
-                    UpdateScrolling(elapsedms, input);
-                }
-                else
-                {
-                    WasScrollingHorz = false;
-                    WasScrollingVert = false;
-                }
-
-                HandleInput(elapsedms, input);
+                Scroller.SelfFocusedInput(elapsedms, input);
             }
         }
 
@@ -427,149 +357,14 @@ namespace RelaUI.Components
         {
             if (HasScrolling)
             {
-                HandleInput(elapsedms, input);
+                Scroller.SelfParentInput(elapsedms, input);
             }
         }
 
-        private void HandleInput(float elapsedms, InputManager input)
-        {
-            if (input.IsKeyFresh(Keys.Up))
-            {
-                input.CaptureInput(Keys.Up);
-                ScrollCurrentY -= 5;
-                if (ScrollCurrentY < 0)
-                {
-                    ScrollCurrentY = 0;
-                }
-            }
-            if (input.IsKeyFresh(Keys.Down))
-            {
-                input.CaptureInput(Keys.Down);
-                ScrollCurrentY += 5;
-                if (ScrollCurrentY > GetScrollYMax())
-                {
-                    ScrollCurrentY = GetScrollYMax();
-                }
-            }
-            if (input.IsKeyFresh(Keys.Left))
-            {
-                input.CaptureInput(Keys.Left);
-                ScrollCurrentX -= 5;
-                if (ScrollCurrentX < 0)
-                {
-                    ScrollCurrentX = 0;
-                }
-            }
-            if (input.IsKeyFresh(Keys.Right))
-            {
-                input.CaptureInput(Keys.Right);
-                ScrollCurrentX += 5;
-                if (ScrollCurrentX > ScrollWidth - Width)
-                {
-                    ScrollCurrentX = ScrollWidth - Width;
-                }
-            }
-            int scrolldiff = input.FreshMouseScrollDifference();
-            if (scrolldiff > 0)
-            {
-                ScrollCurrentY -= scrolldiff / 2;
-                if (ScrollCurrentY < 0)
-                {
-                    ScrollCurrentY = 0;
-                }
-                input.CaptureMouseScroll();
-            }
-            else if (scrolldiff < 0)
-            {
-                ScrollCurrentY -= scrolldiff / 2;
-                if (ScrollCurrentY > GetScrollYMax())
-                {
-                    ScrollCurrentY = GetScrollYMax();
-                }
-                input.CaptureMouseScroll();
-            }
-        }
-
-        private bool UpdateScrolling(float elapsedms, InputManager input)
-        {
-            // MUST support case where time is null
-            bool changed = false;
-            int mx = input.State.MousePos.X;
-            int my = input.State.MousePos.Y;
-            int scw = ScrollSize + (BorderWidth * 2);
-
-            if (ScrollWidth > Width)
-            {
-                float sfx = Lastdx + x + BorderWidth + 2;
-                float sfy = Lastdy + y + Height - scw - 2;
-                int sfw = Width - (BorderWidth * 2) - 4;
-                int sfh = scw;
-                if (((mx > sfx && mx < sfx + sfw && my > sfy && my < sfy + sfh) || WasScrollingHorz) && !WasScrollingVert)
-                {
-                    WasScrollingHorz = true;
-                    //int sbarw = GetSliderBarWidth(false);
-                    ScrollCurrentX = (int)(Math.Round((1.0f - (((sfx + sfw) - mx) / (sfw))) * (ScrollWidth - Width)));
-                    changed = true;
-                    if (ScrollCurrentX < 0)
-                    {
-                        ScrollCurrentX = 0;
-                    }
-                    if (ScrollCurrentX > ScrollWidth - Width)
-                    {
-                        ScrollCurrentX = ScrollWidth - Width;
-                    }
-                }
-            }
-            if (ScrollHeight > Height)
-            {
-                int hmod = BorderWidth * 2;
-                int hstart = BorderWidth + 2;
-                if (HasTitle)
-                {
-                    hmod += GetTitleHeight() + 2;
-                    hstart += GetTitleHeight() + 2;
-                }
-                if (ScrollWidth > Width)
-                {
-                    hmod += scw + 4;
-                }
-
-                float sfx = Lastdx + x + Width - scw - 2;
-                float sfy = Lastdy + y + hstart;
-                int sfw = scw;
-                int sfh = Height - hmod;
-                if (((mx > sfx && mx < sfx + sfw && my > sfy && my < sfy + sfh) || WasScrollingVert) && !WasScrollingHorz)
-                {
-                    WasScrollingVert = true;
-                    //int sbarw = GetSliderBarWidth(true);
-                    ScrollCurrentY = (int)(Math.Round((1.0f - (((sfy + sfh) - my) / (sfh))) * (GetScrollYMax())));
-                    changed = true;
-                    if (ScrollCurrentY < 0)
-                    {
-                        ScrollCurrentY = 0;
-                    }
-                    if (ScrollCurrentY > GetScrollYMax())
-                    {
-                        ScrollCurrentY = GetScrollYMax();
-                    }
-                }
-            }
-            return changed;
-        }
 
         public void SnapScrollToBottom()
         {
-            if (HasScrolling && ScrollHeight > Height)
-            {
-                ScrollCurrentY = GetScrollYMax();
-            }
-        }
-
-        public int GetScrollYMax()
-        {
-            if (Height >= ScrollHeight)
-                return 0;
-            return ScrollHeight - Height;
+            Scroller.SnapScrollToBottom();
         }
 
         protected override void SelfRemove(UIComponent comp)

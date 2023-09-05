@@ -25,7 +25,7 @@ namespace RelaUI.Basics
                 {
                     AttachedLabel.Text = "d" + fps.ToString("0.0");
                     AttachedLabel.ProcessText();
-                    AttachedLabel.x = g.PresentationParameters.BackBufferWidth - TextHelper.GetWidth(AttachedLabel.SFont, AttachedLabel.TextLines[0], AttachedLabel.FontSettings);
+                    AttachedLabel.x = g.PresentationParameters.BackBufferWidth - AttachedLabel.GetTextWidth();
                 }
 
                 TrackedTime = 0;

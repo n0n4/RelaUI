@@ -32,8 +32,18 @@ namespace RelaUI.Components
 
         public bool StayPressed = false;
 
-
-        public string Text;
+        public string Text
+        {
+            get
+            {
+                return RenderedText.Text;
+            }
+            set
+            {
+                RenderedText.Text = value;
+            }
+        }
+        private RenderedText RenderedText = new RenderedText();
         // if you change Text, or Width, or the font/fontsize, call ProcessText to reprocess it
         public bool TextSplitWords = false; // if this is true, allows words to be hyphenated
         public List<string> TextLines = new List<string>();
@@ -113,13 +123,13 @@ namespace RelaUI.Components
             if (AutoWidth)
             {
                 // in autowidth mode, make the button as wide as the text
-                int twid = TextHelper.GetWidth(SFont, Text, FontSettings);
+                int twid = TextHelper.GetWidth(SFont, RenderedText, FontSettings);
                 Width = twid + 4 + (HasBorder ? BorderWidth * 2 : 0);
             }
             else if (AutoHeight) // note the else: can't have both
             {
                 // in autoheight mode, make the button as high as the text
-                int thei = TextHelper.DetermineHeightFromWidth(SFont, Text, FontSettings, Width);
+                int thei = TextHelper.DetermineHeightFromWidth(SFont, RenderedText, FontSettings, Width);
                 Height = thei + 4 + (HasBorder ? BorderWidth * 2 : 0);
             }
 
@@ -128,7 +138,7 @@ namespace RelaUI.Components
 
         public void ProcessText()
         {
-            TextLines = TextHelper.FitToBox(SFont, Text, Width, Height, FontSettings, TextSplitWords);
+            TextLines = TextHelper.FitToBox(SFont, RenderedText, Width, Height, FontSettings, TextSplitWords);
             while (TextLines.Count * SFont.LineSpacing > Height)
             {
                 TextLines.RemoveAt(TextLines.Count - 1);
@@ -211,7 +221,8 @@ namespace RelaUI.Components
                 {
                     mod += diff / 2;
                 }
-                int textwidth = TextHelper.GetWidth(SFont, TextLines[0], FontSettings);
+                // Unsafe justification: this text comes from the rendered text
+                int textwidth = TextHelper.GetWidthUnsafe(SFont, TextLines[0], FontSettings);
                 int wdiff = Width - textwidth;
                 int wmod = 0;
                 if (wdiff > 0)

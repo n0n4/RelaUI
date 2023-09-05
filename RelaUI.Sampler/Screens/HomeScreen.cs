@@ -17,10 +17,12 @@ namespace RelaUI.Sampler.Screens
         private UIButton SamplerButton;
         private UIButton CodeEditorButton;
         private UIButton PaintButton;
+        private UIButton SpreadsheetButton;
 
         private SamplerScreen SamplerScreen;
         private CodeEditorScreen CodeEditorScreen;
         private PaintScreen PaintScreen;
+        private SpreadsheetScreen SpreadsheetScreen;
 
         public HomeScreen(TestUI main)
         {
@@ -56,6 +58,13 @@ namespace RelaUI.Sampler.Screens
                 OpenPaint();
             };
 
+            SpreadsheetButton = new UIButton(0, 0, 0, 0, "Spreadsheet", fontsize: 32, autoheight: true);
+            Panel.Add(SpreadsheetButton);
+            SpreadsheetButton.EventFocused += (sender, args) =>
+            {
+                OpenSpreadsheet();
+            };
+
             Resize(main.Width, main.Height);
         }
 
@@ -82,6 +91,12 @@ namespace RelaUI.Sampler.Screens
             PaintButton.Height = 50;
             PaintButton.x = Main.Width / 2 - (PaintButton.Width / 2);
             PaintButton.y = h;
+            h += 75;
+
+            SpreadsheetButton.Width = 250;
+            SpreadsheetButton.Height = 50;
+            SpreadsheetButton.x = Main.Width / 2 - (SpreadsheetButton.Width / 2);
+            SpreadsheetButton.y = h;
             h += 75;
 
             // reinit if appropriate
@@ -136,6 +151,16 @@ namespace RelaUI.Sampler.Screens
             }
 
             Main.Load(PaintScreen);
+        }
+
+        public void OpenSpreadsheet()
+        {
+            if (SpreadsheetScreen == null)
+            {
+                SpreadsheetScreen = new SpreadsheetScreen(Main);
+            }
+
+            Main.Load(SpreadsheetScreen);
         }
     }
 }

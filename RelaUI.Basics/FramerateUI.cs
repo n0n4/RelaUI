@@ -72,7 +72,7 @@ namespace RelaUI.Basics
                 double fps = TrackedFrames / TrackedTime;
                 FRLabel.Text = "u" + fps.ToString("0.0");
                 FRLabel.ProcessText();
-                FRLabel.x = GraphicsDevice.PresentationParameters.BackBufferWidth - TextHelper.GetWidth(FRLabel.SFont, FRLabel.TextLines[0], FRLabel.FontSettings);
+                FRLabel.x = GraphicsDevice.PresentationParameters.BackBufferWidth - FRLabel.GetTextWidth();
 
                 TrackedTime = 0;
                 TrackedFrames = 0;

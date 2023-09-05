@@ -22,7 +22,18 @@ namespace RelaUI.Components
         public int BorderWidth;
 
 
-        public string Text;
+        public string Text
+        {
+            get
+            {
+                return RenderedText.Text;
+            }
+            set
+            {
+                RenderedText.Text = value;
+            }
+        }
+        private RenderedText RenderedText = new RenderedText();
         // if you change Text, or Width, or the font/fontsize, call ProcessText to reprocess it
         public bool TextSplitWords = false; // if this is true, allows words to be hyphenated
         public bool TextOneLineOnly = false;
@@ -63,7 +74,7 @@ namespace RelaUI.Components
         {
             if (SFont == null)
                 return;
-            TextLines = TextHelper.FitToBox(SFont, Text, Width, Height, FontSettings, TextSplitWords);
+            TextLines = TextHelper.FitToBox(SFont, RenderedText, Width, Height, FontSettings, TextSplitWords);
 
             if (TextOneLineOnly)
             {
@@ -96,7 +107,8 @@ namespace RelaUI.Components
             if (!Initialized)
                 throw new Exception("Tried to get Text Width while uninitialized");
 
-            return TextHelper.GetWidth(SFont, TextLines[0], FontSettings);
+            // unsafe justification: comes from renderedText
+            return TextHelper.GetWidthUnsafe(SFont, TextLines[0], FontSettings);
         }
 
         protected override void SelfRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)

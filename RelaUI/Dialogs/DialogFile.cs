@@ -209,7 +209,7 @@ namespace RelaUI.Dialogs
         {
             // clear all items in the file list panel
             FileListPanel.RemoveAll();
-            FileListPanel.ScrollCurrentY = 0;
+            FileListPanel.Scroller.OffsetY = 0;
 
             // find the given folder
             DirectoryInfo dir = new DirectoryInfo(folderPath);

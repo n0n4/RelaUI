@@ -196,14 +196,15 @@ namespace RelaUI.Input
             LEFT,
             UP,
             DOWN,
-            RIGHT
+            RIGHT,
+            ADDTOEND
         }
         public struct WritingOrder
         {
             public string Add;
             public eWritingOrder Order;
         }
-        public int FreshWriting(WritingOrder[] orders, bool capture)
+        public int FreshWriting(WritingOrder[] orders, bool capture, bool ignoreTabs = false)
         {
             // if alt is held, we bypass everything
             if (AltDown())
@@ -284,7 +285,7 @@ namespace RelaUI.Input
                     count++;
                     continue;
                 }
-                else if (k == Keys.Tab)
+                else if (k == Keys.Tab && !ignoreTabs)
                 {
                     orders[count] = new WritingOrder()
                     {

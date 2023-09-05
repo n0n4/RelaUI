@@ -13,7 +13,7 @@
     <PackageTags>MonoGame;UI</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageVersion>$([System.DateTime]::Now.ToString("yyyy.MM.dd.HHmmss"))</PackageVersion>
+    <PackageVersion>$([System.DateTime]::Now.ToString("yyyy.MM.dd.HH"))</PackageVersion>
   </PropertyGroup>
   
   <ItemGroup>
