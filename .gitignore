@@ -5,6 +5,7 @@
 
 # ExternalDLLs
 ExternalDLLs/
+RelaUI.Sampler/Content/DFonts
 
 # Build results
 *.7z
@@ -358,3 +359,4 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 /push_nuget.cmd
+/RelaUI.Sampler/Content/DFonts/NotoSans-Regular.ttf
