@@ -19,6 +19,11 @@ namespace RelaUI.Text
         public int MonospaceSize = 0;
         public int TabWidth = 40;
 
+        // for dynamic fonts
+        public bool Italic = false;
+        public EFontWeight Weight = EFontWeight.Regular;
+        public string FontTypeOverride = null;
+
         public RelaFont Init(UIStyle Style)
         {
             Color = Style.ForegroundColor;
@@ -57,6 +62,8 @@ namespace RelaUI.Text
                 }
             }
 
+            f = TextHelper.GetBestFont(f, FontTypeOverride, Italic, Weight);
+
             return f;
         }
 
@@ -73,6 +80,9 @@ namespace RelaUI.Text
                 Monospaced = Monospaced,
                 MonospaceSize = MonospaceSize,
                 TabWidth = TabWidth,
+                Italic = Italic,
+                Weight = Weight,
+                FontTypeOverride = FontTypeOverride
             };
         }
     }

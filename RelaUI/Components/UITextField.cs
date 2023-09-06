@@ -354,7 +354,7 @@ namespace RelaUI.Components
 
                     LastTStart = tstart;
                     LastTEnd = tend;
-                    Draw.DrawTextMultiStyles(g, sb, SFont, dx + BorderWidth + 2, dy + mod, Text.Substring(tstart, tend - tstart), adjustedStyles);
+                    Draw.DrawTextMultiStyles(g, sb, dx + BorderWidth + 2, dy + mod, Text.Substring(tstart, tend - tstart), adjustedStyles);
 
                     if (doCaret)
                     {
@@ -405,7 +405,7 @@ namespace RelaUI.Components
                         for (int i = 0; i < RenderedTextLines.Count(); i++)
                         {
                             string line = RenderedTextLines.GetLine(i).Render(SFont);
-                            Draw.DrawTextMultiStyles(g, sb, SFont, dx + BorderWidth + 2 - WindowX, dy + mod + (textheight * i) - WindowY, line, ComputedStyles[i]);
+                            Draw.DrawTextMultiStyles(g, sb, dx + BorderWidth + 2 - WindowX, dy + mod + (textheight * i) - WindowY, line, ComputedStyles[i]);
                         }
 
                         if (doCaret)
@@ -1546,14 +1546,17 @@ namespace RelaUI.Components
             ComputeStyles(); // recompute styles with the new styler
         }
 
+        private TextStyles DefaultTextStyles = new TextStyles(new List<TextSettings>() { null }, new List<int>() { 0 }, new List<int>() { 0 }, new List<RelaFont>() { null });
         private void ComputeStyles()
         {
+            if (SFont == null)
+                return; // not inited
             if (SkipNextCompute)
             {
                 SkipNextCompute = false;
                 return;
             }
-            ComputedStyles = new List<TextStyles>();
+            ComputedStyles.Clear();
             if (MultiLine)
             {
                 for (int i = 0; i < RenderedTextLines.Count(); i++)
@@ -1561,11 +1564,13 @@ namespace RelaUI.Components
                     // if we have no styler, use a default styles set
                     if (TextStyler == null || RenderedTextLines.GetLine(i).Text.Length <= 0)
                     {
-                        ComputedStyles.Add(new TextStyles(new TextSettings[] { FontSettings }, new int[] { 0 }, new int[] { 0 }));
+                        DefaultTextStyles.Styles[0] = FontSettings;
+                        DefaultTextStyles.Fonts[0] = SFont;
+                        ComputedStyles.Add(DefaultTextStyles);
                     }
                     else
                     {
-                        ComputedStyles.Add(TextStyler.GetTextStyles(RenderedTextLines.GetLine(i).Text, FontSettings));
+                        ComputedStyles.Add(TextStyler.GetTextStyles(SFont, RenderedTextLines.GetLine(i).Text, FontSettings));
                     }
                 }
             }
@@ -1573,11 +1578,13 @@ namespace RelaUI.Components
             {
                 if (TextStyler == null)
                 {
-                    ComputedStyles.Add(new TextStyles(new TextSettings[] { FontSettings }, new int[] { 0 }, new int[] { 0 }));
+                    DefaultTextStyles.Styles[0] = FontSettings;
+                    DefaultTextStyles.Fonts[0] = SFont;
+                    ComputedStyles.Add(DefaultTextStyles);
                 }
                 else
                 {
-                    ComputedStyles.Add(TextStyler.GetTextStyles(Text, FontSettings));
+                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, Text, FontSettings));
                 }
             }
         }

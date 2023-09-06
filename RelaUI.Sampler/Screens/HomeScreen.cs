@@ -18,11 +18,13 @@ namespace RelaUI.Sampler.Screens
         private UIButton CodeEditorButton;
         private UIButton PaintButton;
         private UIButton SpreadsheetButton;
+        private UIButton RichTextButton;
 
         private SamplerScreen SamplerScreen;
         private CodeEditorScreen CodeEditorScreen;
         private PaintScreen PaintScreen;
         private SpreadsheetScreen SpreadsheetScreen;
+        private RichTextScreen RichTextScreen;
 
         public HomeScreen(TestUI main)
         {
@@ -65,6 +67,13 @@ namespace RelaUI.Sampler.Screens
                 OpenSpreadsheet();
             };
 
+            RichTextButton = new UIButton(0, 0, 0, 0, "Rich Text", fontsize: 32, autoheight: true);
+            Panel.Add(RichTextButton);
+            RichTextButton.EventFocused += (sender, args) =>
+            {
+                OpenRichText();
+            };
+
             Resize(main.Width, main.Height);
         }
 
@@ -97,6 +106,12 @@ namespace RelaUI.Sampler.Screens
             SpreadsheetButton.Height = 50;
             SpreadsheetButton.x = Main.Width / 2 - (SpreadsheetButton.Width / 2);
             SpreadsheetButton.y = h;
+            h += 75;
+
+            RichTextButton.Width = 250;
+            RichTextButton.Height = 50;
+            RichTextButton.x = Main.Width / 2 - (RichTextButton.Width / 2);
+            RichTextButton.y = h;
             h += 75;
 
             // reinit if appropriate
@@ -161,6 +176,16 @@ namespace RelaUI.Sampler.Screens
             }
 
             Main.Load(SpreadsheetScreen);
+        }
+
+        public void OpenRichText()
+        {
+            if (RichTextScreen == null)
+            {
+                RichTextScreen = new RichTextScreen(Main);
+            }
+
+            Main.Load(RichTextScreen);
         }
     }
 }

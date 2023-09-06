@@ -6,6 +6,6 @@ namespace RelaUI.Text
 {
     public interface ITextStyler
     {
-        TextStyles GetTextStyles(string text, TextSettings baseStyle);
+        TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle);
     }
 }

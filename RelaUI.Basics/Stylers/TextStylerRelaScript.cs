@@ -64,7 +64,7 @@ namespace RelaUI.Basics.Stylers
         public Color? ColorCast = Pink;// Orange;
         public bool ShadowCast = false;
 
-        public TextStyles GetTextStyles(string text, TextSettings baseStyle)
+        public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle)
         {
             // note: expects a monospaced basestyle
             int shadowDepth = 1;
@@ -121,7 +121,7 @@ namespace RelaUI.Basics.Stylers
             TextSettings stylecast = baseStyle.Clone();
             applyStyle(stylecast, ColorCast, ShadowCast);
 
-            TextSettings[] styles = new TextSettings[]
+            List<TextSettings> styles = new List<TextSettings>
             {
                 baseStyle,      // 0
                 stylevar,       // 1
@@ -136,6 +136,10 @@ namespace RelaUI.Basics.Stylers
                 stylearg,       // 10
                 stylecast,       // 10
             };
+
+            List<RelaFont> fonts = new List<RelaFont>();
+            for (int i = 0; i < styles.Count; i++)
+                fonts.Add(TextHelper.GetBestFont(font, styles[i]));
 
             List<int> switches = new List<int>() { 0 };
             List<int> switchStyles = new List<int>() { 0 };
@@ -291,7 +295,7 @@ namespace RelaUI.Basics.Stylers
                 lastc = c;
             }
 
-            return new TextStyles(styles, switches.ToArray(), switchStyles.ToArray());
+            return new TextStyles(styles, switches, switchStyles, fonts);
         }
 
 

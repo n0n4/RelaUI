@@ -17,6 +17,8 @@ namespace RelaUI.Text
         public Dictionary<string, string> ReplaceChecks = new Dictionary<string, string>();
         private HashSet<string> SafeChecks = new HashSet<string>() { "\t" };
 
+        public Dictionary<string, RelaFont> RelatedFonts = new Dictionary<string, RelaFont>();
+
         public int Size;
 
         public int LineSpacing

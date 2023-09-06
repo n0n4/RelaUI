@@ -4,17 +4,20 @@ using System.Text;
 
 namespace RelaUI.Text
 {
+    // TODO: should this be a struct?
     public class TextStyles
     {
-        public TextSettings[] Styles;
-        public int[] StyleSwitchIndices;
-        public int[] StyleSwitchStyles;
+        public List<TextSettings> Styles;
+        public List<int> StyleSwitchIndices;
+        public List<int> StyleSwitchStyles;
+        public List<RelaFont> Fonts;
 
-        public TextStyles(TextSettings[] settingsStyles, int[] styleSwitchIndices, int[] styleSwitchStyles)
+        public TextStyles(List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts)
         {
             Styles = settingsStyles;
             StyleSwitchIndices = styleSwitchIndices;
             StyleSwitchStyles = styleSwitchStyles;
+            Fonts = fonts;
         }
 
         public TextStyles Adjust(int offset)
@@ -22,7 +25,7 @@ namespace RelaUI.Text
             List<int> newindices = new List<int>();
             List<int> newstyles = new List<int>();
 
-            for (int i = 0; i < StyleSwitchIndices.Length; i++)
+            for (int i = 0; i < StyleSwitchIndices.Count; i++)
             {
                 int newindex = StyleSwitchIndices[i] - offset;
                 if (newindex >= 0)
@@ -34,7 +37,7 @@ namespace RelaUI.Text
                 {
                     // special cases
                     // if nothing has been added yet and this is the last one, add it anyways
-                    if (i + 1 >= StyleSwitchIndices.Length)
+                    if (i + 1 >= StyleSwitchIndices.Count)
                     {
                         newindices.Add(0);
                         newstyles.Add(StyleSwitchStyles[i]);
@@ -48,7 +51,7 @@ namespace RelaUI.Text
                 }
             }
 
-            return new TextStyles(Styles, newindices.ToArray(), newstyles.ToArray());
+            return new TextStyles(Styles, newindices, newstyles, Fonts);
         }
     }
 }

@@ -70,27 +70,30 @@ namespace RelaUI.Text
         }
 
         public static int GetWidthMultiStyles(RelaFont font, RenderedText rendered,
-            TextSettings[] settingsStyles, int[] styleSwitchIndices, int[] styleSwitchStyles,
+            List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts,
             int? start = null, int? length = null)
         {
             string text = rendered.Render(font);
             int totalWidth = 0;
-            for (int styleIndex = 0; styleIndex < styleSwitchIndices.Length; styleIndex++)
+            for (int styleIndex = 0; styleIndex < styleSwitchIndices.Count; styleIndex++)
             {
                 int pos = styleSwitchIndices[styleIndex];
                 if (start != null && pos < start)
                 {
                     pos = start.Value;
-                    if (styleIndex + 1 < styleSwitchIndices.Length && pos >= styleSwitchIndices[styleIndex + 1])
+                    if (styleIndex + 1 < styleSwitchIndices.Count && pos >= styleSwitchIndices[styleIndex + 1])
                         continue; // start pos is not in this styleswitch
                 }
                 if (pos >= text.Length)
                     continue; // skip this pos, it's out of bounds
                 TextSettings settings = settingsStyles[styleSwitchStyles[styleIndex]];
+                RelaFont subfont = fonts[styleSwitchStyles[styleIndex]];
+                if (subfont == null || settings == null)
+                    continue; // don't render null styles
 
                 string subtext = null;
                 int nextpos = text.Length;
-                if (styleIndex + 1 < styleSwitchIndices.Length)
+                if (styleIndex + 1 < styleSwitchIndices.Count)
                 {
                     nextpos = styleSwitchIndices[styleIndex + 1];
                     if (nextpos >= text.Length)
@@ -108,8 +111,8 @@ namespace RelaUI.Text
                     continue; // skip this pos, the next one is right on top of it
 
                 subtext = text.Substring(pos, nextpos - pos);
-                
-                totalWidth += TextHelper.GetWidth(font, subtext, settings, totalWidth);
+
+                totalWidth += TextHelper.GetWidth(subfont, subtext, settings, totalWidth);
                 if (length != null && length <= 0)
                     break;
             }
@@ -119,7 +122,7 @@ namespace RelaUI.Text
         public static int GetWidthMultiStyles(RelaFont font, RenderedText rendered,
             TextStyles styles, int? start = null, int? length = null)
         {
-            return GetWidthMultiStyles(font, rendered, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, start, length);
+            return GetWidthMultiStyles(font, rendered, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts, start, length);
         }
 
         public static int GetHeight(RelaFont font, RenderedText rendered, TextSettings settings)
@@ -296,6 +299,79 @@ namespace RelaUI.Text
             newDict.Add(c2, c1c2);
             SurrogatesToString.Add(c1, newDict);
             return c1c2;
+        }
+
+        public static Dictionary<EFontWeight, string> FontWeightNames = new Dictionary<EFontWeight, string>()
+        {
+            { EFontWeight.Thin, "Thin" },
+            { EFontWeight.Light, "Light" },
+            { EFontWeight.ExtraLight, "ExtraLight" },
+            { EFontWeight.Medium, "Medium" },
+            { EFontWeight.Regular, "Regular" },
+            { EFontWeight.SemiBold, "SemiBold" },
+            { EFontWeight.Bold, "Bold" },
+            { EFontWeight.ExtraBold, "ExtraBold" },
+            { EFontWeight.Black, "Black" }
+        };
+
+        public static Dictionary<EFontWeight, string> FontWeightItalicNames = new Dictionary<EFontWeight, string>()
+        {
+            { EFontWeight.Thin, "ThinItalic" },
+            { EFontWeight.Light, "LightItalic" },
+            { EFontWeight.ExtraLight, "ExtraLightItalic" },
+            { EFontWeight.Medium, "MediumItalic" },
+            { EFontWeight.Regular, "Italic" },
+            { EFontWeight.SemiBold, "SemiBoldItalic" },
+            { EFontWeight.Bold, "BoldItalic" },
+            { EFontWeight.ExtraBold, "ExtraBoldItalic" },
+            { EFontWeight.Black, "BlackItalic" }
+        };
+
+        public static RelaFont GetBestFont(RelaFont font, TextSettings settings) 
+        {
+            return GetBestFont(font, settings.FontTypeOverride, settings.Italic, settings.Weight);
+        }
+        public static RelaFont GetBestFont(RelaFont font, string fontOverride, bool italic, EFontWeight weight)
+        {
+            if (fontOverride != null && font.RelatedFonts.TryGetValue(fontOverride, out RelaFont foundFont))
+                return foundFont;
+
+            string suffix;
+            if (italic)
+                suffix = FontWeightItalicNames[weight];
+            else
+                suffix = FontWeightNames[weight];
+
+            if (font.RelatedFonts.TryGetValue(suffix, out foundFont))
+                return foundFont;
+
+            // try again, smudging to Light or Bold
+            if (weight == EFontWeight.Thin || weight == EFontWeight.ExtraLight)
+            {
+                if (italic)
+                    suffix = FontWeightItalicNames[EFontWeight.Light];
+                else
+                    suffix = FontWeightNames[EFontWeight.Light];
+            }
+            else if (weight == EFontWeight.Black || weight == EFontWeight.ExtraBold)
+            {
+                if (italic)
+                    suffix = FontWeightItalicNames[EFontWeight.Bold];
+                else
+                    suffix = FontWeightNames[EFontWeight.Bold];
+            }
+            else
+            {
+                if (italic)
+                    suffix = FontWeightItalicNames[EFontWeight.Regular];
+                else
+                    suffix = FontWeightNames[EFontWeight.Regular];
+            }
+
+            if (font.RelatedFonts.TryGetValue(suffix, out foundFont))
+                return foundFont;
+
+            return font;
         }
     }
 }

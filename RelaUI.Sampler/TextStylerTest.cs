@@ -7,7 +7,7 @@ namespace RelaUI.Sampler
 {
     public class TextStylerTest : ITextStyler
     {
-        public TextStyles GetTextStyles(string text, TextSettings baseStyle)
+        public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle)
         {
             TextSettings style2 = baseStyle.Clone();
             style2.HasShadow = true;
@@ -18,12 +18,16 @@ namespace RelaUI.Sampler
             style3.Monospaced = true;
             style3.MonospaceSize = 9;
 
-            TextSettings[] styles = new TextSettings[]
+            List<TextSettings> styles = new List<TextSettings>()
             {
                 baseStyle,
                 style2,
                 style3,
             };
+
+            List<RelaFont> fonts = new List<RelaFont>();
+            for (int i = 0; i < styles.Count; i++)
+                fonts.Add(TextHelper.GetBestFont(font, styles[i]));
 
             List<int> switches = new List<int>() { 0 };
             List<int> switchStyles = new List<int>() { 0 };
@@ -65,7 +69,7 @@ namespace RelaUI.Sampler
                 }
             }
 
-            return new TextStyles(styles, switches.ToArray(), switchStyles.ToArray());
+            return new TextStyles(styles, switches, switchStyles, fonts);
         }
     }
 }

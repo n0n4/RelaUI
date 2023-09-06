@@ -72,6 +72,84 @@
 #begin DFonts/NotoMono-Regular.ttf
 /copy:DFonts/NotoMono-Regular.ttf
 
+#begin DFonts/NotoSans-Black.ttf
+/copy:DFonts/NotoSans-Black.ttf
+
+#begin DFonts/NotoSans-BlackItalic.ttf
+/copy:DFonts/NotoSans-BlackItalic.ttf
+
+#begin DFonts/NotoSans-Bold.ttf
+/copy:DFonts/NotoSans-Bold.ttf
+
+#begin DFonts/NotoSans-BoldItalic.ttf
+/copy:DFonts/NotoSans-BoldItalic.ttf
+
+#begin DFonts/NotoSans-ExtraBold.ttf
+/copy:DFonts/NotoSans-ExtraBold.ttf
+
+#begin DFonts/NotoSans-ExtraBoldItalic.ttf
+/copy:DFonts/NotoSans-ExtraBoldItalic.ttf
+
+#begin DFonts/NotoSans-ExtraLight.ttf
+/copy:DFonts/NotoSans-ExtraLight.ttf
+
+#begin DFonts/NotoSans-ExtraLightItalic.ttf
+/copy:DFonts/NotoSans-ExtraLightItalic.ttf
+
+#begin DFonts/NotoSans-Italic.ttf
+/copy:DFonts/NotoSans-Italic.ttf
+
+#begin DFonts/NotoSans-Light.ttf
+/copy:DFonts/NotoSans-Light.ttf
+
+#begin DFonts/NotoSans-LightItalic.ttf
+/copy:DFonts/NotoSans-LightItalic.ttf
+
+#begin DFonts/NotoSans-Medium.ttf
+/copy:DFonts/NotoSans-Medium.ttf
+
+#begin DFonts/NotoSans-MediumItalic.ttf
+/copy:DFonts/NotoSans-MediumItalic.ttf
+
 #begin DFonts/NotoSans-Regular.ttf
 /copy:DFonts/NotoSans-Regular.ttf
+
+#begin DFonts/NotoSans-SemiBold.ttf
+/copy:DFonts/NotoSans-SemiBold.ttf
+
+#begin DFonts/NotoSans-SemiBoldItalic.ttf
+/copy:DFonts/NotoSans-SemiBoldItalic.ttf
+
+#begin DFonts/NotoSans-Thin.ttf
+/copy:DFonts/NotoSans-Thin.ttf
+
+#begin DFonts/NotoSans-ThinItalic.ttf
+/copy:DFonts/NotoSans-ThinItalic.ttf
+
+#begin DFonts/NotoSansMono-Black.ttf
+/copy:DFonts/NotoSansMono-Black.ttf
+
+#begin DFonts/NotoSansMono-Bold.ttf
+/copy:DFonts/NotoSansMono-Bold.ttf
+
+#begin DFonts/NotoSansMono-ExtraBold.ttf
+/copy:DFonts/NotoSansMono-ExtraBold.ttf
+
+#begin DFonts/NotoSansMono-ExtraLight.ttf
+/copy:DFonts/NotoSansMono-ExtraLight.ttf
+
+#begin DFonts/NotoSansMono-Light.ttf
+/copy:DFonts/NotoSansMono-Light.ttf
+
+#begin DFonts/NotoSansMono-Medium.ttf
+/copy:DFonts/NotoSansMono-Medium.ttf
+
+#begin DFonts/NotoSansMono-Regular.ttf
+/copy:DFonts/NotoSansMono-Regular.ttf
+
+#begin DFonts/NotoSansMono-SemiBold.ttf
+/copy:DFonts/NotoSansMono-SemiBold.ttf
+
+#begin DFonts/NotoSansMono-Thin.ttf
+/copy:DFonts/NotoSansMono-Thin.ttf
 

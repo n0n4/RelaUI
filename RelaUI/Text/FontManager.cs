@@ -15,6 +15,7 @@ namespace RelaUI.Text
         public int DefaultSize = 8;
         public Dictionary<string, Dictionary<int, SpriteFont>> Fonts = new Dictionary<string, Dictionary<int, SpriteFont>>();
         public Dictionary<string, DynamicSpriteFont> DynamicFonts = new Dictionary<string, DynamicSpriteFont>();
+        public Dictionary<string, Dictionary<int, RelaFont>> RelaFonts = new Dictionary<string, Dictionary<int, RelaFont>>();
 
         public void Load(ContentManager content)
         {
@@ -54,7 +55,7 @@ namespace RelaUI.Text
             dir = new DirectoryInfo(Path.Combine(content.RootDirectory, dynamicfontfolder));
             if (!dir.Exists)
             {
-                throw new DirectoryNotFoundException("BMFonts content folder not found!");
+                throw new DirectoryNotFoundException("DFonts content folder not found!");
             }
 
             DynamicFonts = new Dictionary<string, DynamicSpriteFont>();
@@ -127,19 +128,60 @@ namespace RelaUI.Text
 
         public RelaFont ResolveRelaFont(string font, int fontsize)
         {
+            // reuse font if already exists in size
+            if (RelaFonts.TryGetValue(font, out var fontdict))
+            {
+                if (fontdict.TryGetValue(fontsize, out RelaFont outfont))
+                    return outfont;
+            }
+            else
+            {
+                RelaFonts.Add(font, new Dictionary<int, RelaFont>());
+            }
+
+            // make new font if not found
             RelaFont rfont = new RelaFont();
             rfont.Size = fontsize;
+            RelaFonts[font].Add(fontsize, rfont);
 
             if (DynamicFonts.ContainsKey(font) || !Fonts.ContainsKey(font))
             {
                 rfont.IsDynamic = true;
                 rfont.DFont = ResolveDynamicFont(font, fontsize);
+                FillRelatedDynamicFonts(rfont, font, fontsize);
                 return rfont;
             }
 
             rfont.IsDynamic = false;
             rfont.SFont = ResolveFont(font, fontsize);
             return rfont;
+        }
+
+        private void FillRelatedDynamicFonts(RelaFont rfont, string name, int size)
+        {
+            // find prefix
+            int hyphenIndex = name.LastIndexOf('-');
+            if (hyphenIndex == -1)
+                return; // no prefix
+
+            string prefix = name.Substring(0, hyphenIndex);
+            string suffix = name.Substring(hyphenIndex + 1);
+
+            // find all dynamic fonts that match the prefix but not the suffix
+            foreach (var kvp in DynamicFonts)
+            {
+                int keyHyphenIndex = kvp.Key.LastIndexOf('-');
+                if (keyHyphenIndex == -1)
+                    continue;
+
+                string keyPrefix = kvp.Key.Substring(0, keyHyphenIndex);
+                string keySuffix = kvp.Key.Substring(keyHyphenIndex + 1);
+
+                if (keyPrefix == prefix && keySuffix != suffix)
+                {
+                    rfont.RelatedFonts.Add(keySuffix, ResolveRelaFont(kvp.Key, size));
+                }
+            }
         }
     }
 }

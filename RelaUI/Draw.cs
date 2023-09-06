@@ -4,6 +4,7 @@ using RelaUI.DrawHandles;
 using RelaUI.Text;
 using SpriteFontPlus;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace RelaUI
@@ -87,20 +88,23 @@ namespace RelaUI
             DrawString(g, s, font, text, x, y, settings.Color, settings.Monospaced, settings.MonospaceSize, settings.TabWidth, prevTabSum);
         }
 
-        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, RelaFont font, float x, float y, string text,
-            TextSettings[] settingsStyles, int[] styleSwitchIndices, int[] styleSwitchStyles)
+        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, string text,
+            List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts)
         {
             // draw each chunk
             int totalWidth = 0;
-            for (int styleIndex = 0; styleIndex < styleSwitchIndices.Length; styleIndex++)
+            for (int styleIndex = 0; styleIndex < styleSwitchIndices.Count; styleIndex++)
             {
                 int pos = styleSwitchIndices[styleIndex];
                 if (pos >= text.Length)
                     continue; // skip this pos, it's out of bounds
                 TextSettings settings = settingsStyles[styleSwitchStyles[styleIndex]];
+                RelaFont font = fonts[styleSwitchStyles[styleIndex]];
+                if (font == null || settings == null)
+                    continue; // don't render null styles
 
                 string subtext = null;
-                if (styleIndex + 1 < styleSwitchIndices.Length)
+                if (styleIndex + 1 < styleSwitchIndices.Count)
                 {
                     int nextpos = styleSwitchIndices[styleIndex + 1];
                     if (nextpos >= text.Length)
@@ -121,10 +125,10 @@ namespace RelaUI
             }
         }
 
-        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, RelaFont font, float x, float y, string text,
+        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, string text,
             TextStyles styles)
         {
-            DrawTextMultiStyles(g, s, font, x, y, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles);
+            DrawTextMultiStyles(g, s, x, y, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts);
         }
 
         public static void DrawString(GraphicsDevice g, SpriteBatch s, RelaFont font, string text, float x, float y, Color c,

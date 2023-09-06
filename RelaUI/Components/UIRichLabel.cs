@@ -1,16 +1,18 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using RelaUI.DrawHandles;
 using RelaUI.Input;
 using RelaUI.Text;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace RelaUI.Components
 {
-    public class UILabel : UIComponent
+    public class UIRichLabel : UIComponent
     {
+
         public int Width = 100;
         public int Height = 100;
         public bool AutoHeight = true;
@@ -30,7 +32,11 @@ namespace RelaUI.Components
             }
             set
             {
-                RenderedText.Text = value;
+                if (value != RenderedText.Text)
+                {
+                    RenderedText.Text = value;
+                    ComputeStyles();
+                }
             }
         }
         private RenderedText RenderedText = new RenderedText();
@@ -45,8 +51,11 @@ namespace RelaUI.Components
         public RelaFont SFont;
         public TextSettings FontSettings = new TextSettings();
 
-        public UILabel(float x, float y, int w, int h, string text, string font = "", int? fontsize = null,
-            bool autoheight = true)
+        private ITextStyler TextStyler = null;
+        private List<TextStyles> ComputedStyles = new List<TextStyles>();
+
+        public UIRichLabel(float x, float y, int w, int h, string text, ITextStyler styler,
+            string font = "", int? fontsize = null, bool autoheight = true)
         {
             this.x = x;
             this.y = y;
@@ -55,9 +64,12 @@ namespace RelaUI.Components
             Text = text;
             FontSettings.FontName = font;
             FontSettings.FontSize = fontsize != null ? (int)fontsize : 0;
+            TextStyler = styler;
 
             // need to change these for width/height preferences to be actually used
             AutoHeight = autoheight;
+
+            ComputeStyles();
         }
 
         protected override void SelfInit()
@@ -92,6 +104,8 @@ namespace RelaUI.Components
             {
                 TextLines.RemoveAt(TextLines.Count - 1);
             }
+
+            ComputeStyles();
         }
 
         public override int GetWidth()
@@ -123,7 +137,38 @@ namespace RelaUI.Components
 
             for (int i = 0; i < TextLines.Count; i++)
             {
-                Draw.DrawText(g, sb, SFont, dx, dy + i * SFont.LineSpacing, TextLines[i], FontSettings);
+                Draw.DrawTextMultiStyles(g, sb, dx, dy + i * SFont.LineSpacing, TextLines[i], ComputedStyles[i]);
+            }
+        }
+
+        public void SetTextStyler(ITextStyler styler)
+        {
+            TextStyler = styler;
+            ComputeStyles(); // recompute styles with the new styler
+        }
+
+        private TextStyles DefaultTextStyles = new TextStyles(new List<TextSettings>() { null }, new List<int>() { 0 }, new List<int>() { 0 }, new List<RelaFont>() { null });
+        private void ComputeStyles()
+        {
+            if (SFont == null)
+                return; // not inited
+
+            ComputedStyles.Clear();
+
+            for (int i = 0; i < TextLines.Count; i++)
+            {
+                // if we have no styler, use a default styles set
+                if (TextStyler == null || TextLines[i].Length <= 0)
+                {
+                    DefaultTextStyles.Styles[0] = FontSettings;
+                    DefaultTextStyles.Fonts[0] = SFont;
+
+                    ComputedStyles.Add(DefaultTextStyles);
+                }
+                else
+                {
+                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings));
+                }
             }
         }
     }
