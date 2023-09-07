@@ -62,9 +62,9 @@ namespace RelaUI.Components
         private float WindowX = 0;
         private float WindowY = 0;
 
-        private RenderedTextLines RenderedTextLines = new RenderedTextLines();
+        public RenderedTextLines RenderedTextLines = new RenderedTextLines();
         private string TextField = string.Empty;
-        private RenderedText RenderedText = new RenderedText();
+        public RenderedText RenderedText = new RenderedText();
         private StringBuilder MultiLineStringBuilder;
         public string Text
         {

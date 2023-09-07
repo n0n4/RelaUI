@@ -33,7 +33,7 @@ namespace RelaUI.Components
                 RenderedText.Text = value;
             }
         }
-        private RenderedText RenderedText = new RenderedText();
+        public RenderedText RenderedText = new RenderedText();
         // if you change Text, or Width, or the font/fontsize, call ProcessText to reprocess it
         // TODO: can we make this reactive somehow?
         public bool TextSplitWords = false; // if this is true, allows words to be hyphenated
