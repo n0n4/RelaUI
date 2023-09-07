@@ -354,7 +354,7 @@ namespace RelaUI.Components
 
                     LastTStart = tstart;
                     LastTEnd = tend;
-                    Draw.DrawTextMultiStyles(g, sb, dx + BorderWidth + 2, dy + mod, Text.Substring(tstart, tend - tstart), adjustedStyles);
+                    Draw.DrawTextMultiStyles(g, sb, dx + BorderWidth + 2, dy + mod, dx, dy, Text.Substring(tstart, tend - tstart), adjustedStyles);
 
                     if (doCaret)
                     {
@@ -405,7 +405,7 @@ namespace RelaUI.Components
                         for (int i = 0; i < RenderedTextLines.Count(); i++)
                         {
                             string line = RenderedTextLines.GetLine(i).Render(SFont);
-                            Draw.DrawTextMultiStyles(g, sb, dx + BorderWidth + 2 - WindowX, dy + mod + (textheight * i) - WindowY, line, ComputedStyles[i]);
+                            Draw.DrawTextMultiStyles(g, sb, dx + BorderWidth + 2 - WindowX, dy + mod + (textheight * i) - WindowY, dx, dy, line, ComputedStyles[i]);
                         }
 
                         if (doCaret)
@@ -1559,6 +1559,8 @@ namespace RelaUI.Components
             ComputedStyles.Clear();
             if (MultiLine)
             {
+                if (TextStyler != null)
+                    TextStyler.PreStyling();
                 for (int i = 0; i < RenderedTextLines.Count(); i++)
                 {
                     // if we have no styler, use a default styles set
@@ -1570,9 +1572,11 @@ namespace RelaUI.Components
                     }
                     else
                     {
-                        ComputedStyles.Add(TextStyler.GetTextStyles(SFont, RenderedTextLines.GetLine(i).Text, FontSettings));
+                        ComputedStyles.Add(TextStyler.GetTextStyles(SFont, RenderedTextLines.GetLine(i).Text, FontSettings, i));
                     }
                 }
+                if (TextStyler != null)
+                    TextStyler.PostStyling();
             }
             else
             {
@@ -1584,7 +1588,9 @@ namespace RelaUI.Components
                 }
                 else
                 {
-                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, Text, FontSettings));
+                    TextStyler.PreStyling();
+                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, Text, FontSettings, 0));
+                    TextStyler.PostStyling();
                 }
             }
         }

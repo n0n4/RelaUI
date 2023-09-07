@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using RelaUI.Components;
 using RelaUI.DrawHandles;
 using RelaUI.Text;
 using SpriteFontPlus;
@@ -88,11 +89,17 @@ namespace RelaUI
             DrawString(g, s, font, text, x, y, settings.Color, settings.Monospaced, settings.MonospaceSize, settings.TabWidth, prevTabSum);
         }
 
-        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, string text,
-            List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts)
+        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, float dx, float dy, string text,
+            List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts,
+            List<UIComponent> innerComponents, List<int> componentIndices)
         {
             // draw each chunk
             int totalWidth = 0;
+            int compNumber = 0;
+            int nextCompIndex = -1;
+            if (componentIndices != null && componentIndices.Count > 0)
+                nextCompIndex = componentIndices[0];
+
             for (int styleIndex = 0; styleIndex < styleSwitchIndices.Count; styleIndex++)
             {
                 int pos = styleSwitchIndices[styleIndex];
@@ -102,6 +109,19 @@ namespace RelaUI
                 RelaFont font = fonts[styleSwitchStyles[styleIndex]];
                 if (font == null || settings == null)
                     continue; // don't render null styles
+
+                while (nextCompIndex == pos)
+                {
+                    // render internal components
+                    UIComponent nextComp = innerComponents[compNumber];
+                    nextComp.x = totalWidth + x - dx;
+                    nextComp.y = y - dy;
+                    totalWidth += nextComp.GetWidth();
+                    compNumber++;
+                    nextCompIndex = -1;
+                    if (componentIndices.Count > compNumber)
+                        nextCompIndex = componentIndices[compNumber];
+                }
 
                 string subtext = null;
                 if (styleIndex + 1 < styleSwitchIndices.Count)
@@ -125,10 +145,11 @@ namespace RelaUI
             }
         }
 
-        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, string text,
+        public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, float dx, float dy, string text,
             TextStyles styles)
         {
-            DrawTextMultiStyles(g, s, x, y, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts);
+            DrawTextMultiStyles(g, s, x, y, dx, dy, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts,
+                styles.InnerComponents, styles.ComponentIndices);
         }
 
         public static void DrawString(GraphicsDevice g, SpriteBatch s, RelaFont font, string text, float x, float y, Color c,

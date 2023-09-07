@@ -64,7 +64,7 @@ namespace RelaUI.Basics.Stylers
         public Color? ColorCast = Pink;// Orange;
         public bool ShadowCast = false;
 
-        public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle)
+        public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle, int lineNumber)
         {
             // note: expects a monospaced basestyle
             int shadowDepth = 1;
@@ -322,6 +322,17 @@ namespace RelaUI.Basics.Stylers
                 || c == '4' || c == '5' || c == '6' || c == '7'
                 || c == '8' || c == '9'
                 || c == '.' || c == '-';
+        }
+
+
+        public void PreStyling()
+        {
+
+        }
+
+        public void PostStyling()
+        {
+
         }
     }
 }

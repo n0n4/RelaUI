@@ -128,7 +128,7 @@ namespace RelaUI.Basics.Stylers
             return result;
         }
 
-        public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle)
+        public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle, int lineNumber)
         {
             if (font != LastFont || baseStyle != LastStyle)
             {
@@ -287,6 +287,17 @@ namespace RelaUI.Basics.Stylers
             }
 
             return new TextStyles(AllStyles, switches, switchStyles, AllFonts);
+        }
+
+
+        public void PreStyling()
+        {
+
+        }
+
+        public void PostStyling()
+        {
+
         }
     }
 }

@@ -41,11 +41,12 @@ namespace RelaUI.Sampler.Screens
                 + "default text\n"
                 + "some text /italic now *bold and italic now/ only bold* normal again\n"
                 + "some text with \\*escaped *and bold\\/ escaped /and italic\n"
-                + "some text with normal\\\\ backslashes visible\\\\");
-            AddTab("string_comma_array.rela", "import basic:string l:str\n" +
-                "v:s := ('a','b','c');\n" +
-                "l:str.f:commaand(v:s) // a, b, and c");
-            AddTab("blank.rela", "");
+                + "some text with normal\\\\ backslashes visible\\\\", false);
+            AddTab("inner test", "some `monospace text`\n" +
+                "some *shadow text*\n" +
+                "some text % with a button in it\n" +
+                "this % time % two buttons", true);
+            AddTab("blank.rela", "", false);
 
             UIButton ReturnButton = new UIButton(0, 0, 50, 50, "Back", fontsize: 20);
             Panel.Add(ReturnButton);
@@ -57,7 +58,7 @@ namespace RelaUI.Sampler.Screens
             Resize(main.Width, main.Height);
         }
 
-        public void AddTab(string name, string text)
+        public void AddTab(string name, string text, bool innerStyle)
         {
             UIPanel panel = new UIPanel(0, 0, 0, 0)
             {
@@ -72,7 +73,14 @@ namespace RelaUI.Sampler.Screens
             {
                 relaMultiText.TextColor = new Microsoft.Xna.Framework.Color(218, 218, 218, 255);
             };
-            relaMultiText.SetTextStyler(new TextStylerBasic(new List<Color>()));
+            if (!innerStyle)
+            {
+                relaMultiText.SetTextStyler(new TextStylerBasic(new List<Color>()));
+            }
+            else
+            {
+                relaMultiText.SetTextStyler(new TextStylerInnerTest(relaMultiText));
+            }
             panel.Add(relaMultiText);
             TabTexts.Add(relaMultiText);
 

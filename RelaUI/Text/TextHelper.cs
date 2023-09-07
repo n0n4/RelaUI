@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using RelaUI.Components;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -71,10 +72,15 @@ namespace RelaUI.Text
 
         public static int GetWidthMultiStyles(RelaFont font, RenderedText rendered,
             List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts,
-            int? start = null, int? length = null)
+            List<UIComponent> innerComponents, List<int> componentIndices, int? start = null, int? length = null)
         {
             string text = rendered.Render(font);
             int totalWidth = 0;
+            int compNumber = 0;
+            int nextCompIndex = -1;
+            if (componentIndices != null && componentIndices.Count > 0)
+                nextCompIndex = componentIndices[0];
+
             for (int styleIndex = 0; styleIndex < styleSwitchIndices.Count; styleIndex++)
             {
                 int pos = styleSwitchIndices[styleIndex];
@@ -90,6 +96,17 @@ namespace RelaUI.Text
                 RelaFont subfont = fonts[styleSwitchStyles[styleIndex]];
                 if (subfont == null || settings == null)
                     continue; // don't render null styles
+
+                while (nextCompIndex == pos)
+                {
+                    // render internal components
+                    UIComponent nextComp = innerComponents[compNumber];
+                    totalWidth += nextComp.GetWidth();
+                    compNumber++;
+                    nextCompIndex = -1;
+                    if (componentIndices.Count > compNumber)
+                        nextCompIndex = componentIndices[compNumber];
+                }
 
                 string subtext = null;
                 int nextpos = text.Length;
@@ -122,7 +139,8 @@ namespace RelaUI.Text
         public static int GetWidthMultiStyles(RelaFont font, RenderedText rendered,
             TextStyles styles, int? start = null, int? length = null)
         {
-            return GetWidthMultiStyles(font, rendered, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts, start, length);
+            return GetWidthMultiStyles(font, rendered, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts,
+                styles.InnerComponents, styles.ComponentIndices, start, length);
         }
 
         public static int GetHeight(RelaFont font, RenderedText rendered, TextSettings settings)

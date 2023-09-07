@@ -6,6 +6,8 @@ namespace RelaUI.Text
 {
     public interface ITextStyler
     {
-        TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle);
+        void PreStyling();
+        TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle, int lineNumber);
+        void PostStyling();
     }
 }

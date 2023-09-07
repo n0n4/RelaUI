@@ -137,7 +137,7 @@ namespace RelaUI.Components
 
             for (int i = 0; i < TextLines.Count; i++)
             {
-                Draw.DrawTextMultiStyles(g, sb, dx, dy + i * SFont.LineSpacing, TextLines[i], ComputedStyles[i]);
+                Draw.DrawTextMultiStyles(g, sb, dx, dy + i * SFont.LineSpacing, dx, dy, TextLines[i], ComputedStyles[i]);
             }
         }
 
@@ -155,6 +155,8 @@ namespace RelaUI.Components
 
             ComputedStyles.Clear();
 
+            if (TextStyler != null)
+                TextStyler.PreStyling();
             for (int i = 0; i < TextLines.Count; i++)
             {
                 // if we have no styler, use a default styles set
@@ -167,9 +169,11 @@ namespace RelaUI.Components
                 }
                 else
                 {
-                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings));
+                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings, i));
                 }
             }
+            if (TextStyler != null)
+                TextStyler.PostStyling();
         }
     }
 }
