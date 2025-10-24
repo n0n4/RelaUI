@@ -404,7 +404,7 @@ namespace RelaUI.Components
 
                         for (int i = 0; i < RenderedTextLines.Count(); i++)
                         {
-                            string line = RenderedTextLines.GetLine(i).Render(SFont);
+                            string line = RenderedTextLines.GetLine(i).RenderMultiStyle(SFont, ComputedStyles[i]);
                             Draw.DrawTextMultiStyles(g, sb, dx + BorderWidth + 2 - WindowX, dy + mod + (textheight * i) - WindowY, dx, dy, line, ComputedStyles[i]);
                         }
 

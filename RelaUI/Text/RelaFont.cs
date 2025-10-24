@@ -49,6 +49,11 @@ namespace RelaUI.Text
         {
             StringBuilder sb = SanitizeBuilder;
             sb.Clear();
+            AppendSanitizeString(text, sb);
+            return sb.ToString();
+        }
+        public void AppendSanitizeString(string text, StringBuilder sb)
+        {
             char previousc = ' ';
             for (int i = 0; i < text.Length; i++)
             {
@@ -56,12 +61,12 @@ namespace RelaUI.Text
 
                 // note: high surrogate = start of a combined
                 // low surrogate = end of a combined
-                // don't check width for high surrogates alone
-                // don't check width for low surrogates
+                // don't check width for high surrogates
+                // don't check width for low surrogates alone
                 string check = string.Empty;
-                if (!char.IsLowSurrogate(c))
+                if (!char.IsHighSurrogate(c))
                 {
-                    if (char.IsHighSurrogate(c))
+                    if (char.IsLowSurrogate(c))
                     {
                         check = TextHelper.GetSurrogatesToString(previousc, c);
                     }
@@ -97,8 +102,8 @@ namespace RelaUI.Text
                             {
                                 string codepointString = e.Message.Substring("Could not find glyph for codepoint ".Length);
                                 int codepoint = int.Parse(codepointString);
-                                ReplaceChecks.Add("" + (char)codepoint, "?");
-                                check = "?";
+                                ReplaceChecks.TryAdd("" + (char)codepoint, " ");
+                                check = "";
                             }
                             else
                             {
@@ -128,8 +133,37 @@ namespace RelaUI.Text
 
                 previousc = c;
             }
+        }
+
+        private StringBuilder MultiStyleSanitizeStringBuilder = new StringBuilder();
+        public string SanitizeStringMultiStyle(string text, TextStyles styles)
+        {
+            return SanitizeStringMultiStyle(text, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Styles);
+        }
+
+        public string SanitizeStringMultiStyle(string text, List<int> switchIndices,
+            List<int> switchStyles, List<TextSettings> styles)
+        {
+            StringBuilder sb = MultiStyleSanitizeStringBuilder;
+            sb.Clear();
+            for (int i = 0; i < switchIndices.Count; i++)
+            {
+                // sanitize each section individually based on font overrides
+                // find best font for this style
+                int pos = switchIndices[i];
+                int nextpos = text.Length;
+                if (i < switchIndices.Count - 1)
+                    nextpos = switchIndices[i + 1];
+                if (pos == nextpos)
+                    continue; // overlapping styles, skip it
+                string subtext = text.Substring(pos, nextpos - pos);
+                TextSettings settings = styles[switchStyles[i]];
+                RelaFont font = TextHelper.GetBestFont(this, settings);
+                font.AppendSanitizeString(subtext, sb);
+            }
             return sb.ToString();
         }
+
         public Vector2 MeasureString(string text, bool safe)
         {
             if (!safe)
@@ -154,7 +188,7 @@ namespace RelaUI.Text
                     {
                         string codepointString = e.Message.Substring("Could not find glyph for codepoint ".Length);
                         int codepoint = int.Parse(codepointString);
-                        ReplaceChecks.Add("" + (char)codepoint, "?");
+                        ReplaceChecks.Add("" + (char)codepoint, " ");
                         text = SanitizeString(text);
                     }
                     else

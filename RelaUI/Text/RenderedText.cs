@@ -36,5 +36,24 @@ namespace RelaUI.Text
 
             return Rendered;
         }
+
+        public string RenderMultiStyle(RelaFont font, TextStyles styles)
+        {
+            return RenderMultiStyle(font, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Styles);
+        }
+
+        public string RenderMultiStyle(RelaFont font, List<int> switchIndices,
+            List<int> switchStyles, List<TextSettings> styles)
+        { 
+            if (Rendered != null && RenderedFont == font)
+            {
+                return Rendered;
+            }
+            RenderedFont = font;
+
+            Rendered = font.SanitizeStringMultiStyle(Text, switchIndices, switchStyles, styles);
+
+            return Rendered;
+        }
     }
 }

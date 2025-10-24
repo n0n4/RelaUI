@@ -74,7 +74,15 @@ namespace RelaUI.Text
             List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts,
             List<UIComponent> innerComponents, List<int> componentIndices, int? start = null, int? length = null)
         {
-            string text = rendered.Render(font);
+            string text = rendered.RenderMultiStyle(font, styleSwitchIndices, styleSwitchStyles, settingsStyles);
+            return GetWidthMultiStylesUnsafe(font, text, settingsStyles, styleSwitchIndices, styleSwitchStyles, fonts,
+                innerComponents, componentIndices, start, length);
+        }
+
+        public static int GetWidthMultiStylesUnsafe(RelaFont font, string text,
+            List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts,
+            List<UIComponent> innerComponents, List<int> componentIndices, int? start = null, int? length = null)
+        {
             int totalWidth = 0;
             int compNumber = 0;
             int nextCompIndex = -1;
@@ -140,6 +148,13 @@ namespace RelaUI.Text
             TextStyles styles, int? start = null, int? length = null)
         {
             return GetWidthMultiStyles(font, rendered, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts,
+                styles.InnerComponents, styles.ComponentIndices, start, length);
+        }
+
+        public static int GetWidthMultiStylesUnsafe(RelaFont font, string text,
+            TextStyles styles, int? start = null, int? length = null)
+        {
+            return GetWidthMultiStylesUnsafe(font, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts,
                 styles.InnerComponents, styles.ComponentIndices, start, length);
         }
 

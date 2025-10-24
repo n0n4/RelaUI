@@ -75,7 +75,7 @@ namespace RelaUI.Sampler.Screens
             };
             if (!innerStyle)
             {
-                relaMultiText.SetTextStyler(new TextStylerBasic(new List<Color>()));
+                relaMultiText.SetTextStyler(new TextStylerBasic(new List<Color>(), "GlobalTwitterColorEmoji-SVGinOT"));
             }
             else
             {

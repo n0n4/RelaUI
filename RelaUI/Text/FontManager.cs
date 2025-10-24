@@ -17,6 +17,7 @@ namespace RelaUI.Text
         public Dictionary<string, DynamicSpriteFont> DynamicFonts = new Dictionary<string, DynamicSpriteFont>();
         public Dictionary<string, Dictionary<int, RelaFont>> RelaFonts = new Dictionary<string, Dictionary<int, RelaFont>>();
 
+        public List<string> GlobalFontNames = new List<string>();
         public void Load(ContentManager content)
         {
             string fontfolder = "BMFonts";
@@ -75,7 +76,11 @@ namespace RelaUI.Text
                     }
                 }
 
-                if (DefaultDynamicFont == string.Empty)
+                if (fname.StartsWith("Global"))
+                {
+                    GlobalFontNames.Add(fname);
+                }
+                else if (DefaultDynamicFont == string.Empty)
                 {
                     DefaultDynamicFont = fname; // only check in here so empty font folders don't count
                 }
@@ -159,6 +164,15 @@ namespace RelaUI.Text
 
         private void FillRelatedDynamicFonts(RelaFont rfont, string name, int size)
         {
+            // add global links
+            foreach (string globalfont in GlobalFontNames)
+            {
+                if (name != globalfont)
+                {
+                    rfont.RelatedFonts.Add(globalfont, ResolveRelaFont(globalfont, size));
+                }
+            }
+
             // find prefix
             int hyphenIndex = name.LastIndexOf('-');
             if (hyphenIndex == -1)

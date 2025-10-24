@@ -69,6 +69,9 @@
 /processorParam:TextureFormat=Color
 /build:Cursors/C1/C1_WAITING.png
 
+#begin DFonts/GlobalTwitterColorEmoji-SVGinOT.ttf
+/copy:DFonts/GlobalTwitterColorEmoji-SVGinOT.ttf
+
 #begin DFonts/NotoMono-Regular.ttf
 /copy:DFonts/NotoMono-Regular.ttf
 

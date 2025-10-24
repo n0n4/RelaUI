@@ -124,7 +124,7 @@ namespace RelaUI.Components
                 throw new Exception("Tried to get Text Width while uninitialized");
 
             // unsafe justification: comes from renderedText
-            return TextHelper.GetWidthUnsafe(SFont, TextLines[0], FontSettings);
+            return TextHelper.GetWidthMultiStylesUnsafe(SFont, TextLines[0], ComputedStyles[0]);
         }
 
         protected override void SelfRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)

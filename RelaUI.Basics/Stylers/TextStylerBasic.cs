@@ -24,12 +24,19 @@ namespace RelaUI.Basics.Stylers
             Default,
             Dark
         }
-        // weight, italic, shadow, underline, color
-        private Dictionary<EFontWeight,
+        public enum EFontType
+        {
+            Latin,
+            Emoji
+        }
+        // type, weight, italic, shadow, underline, color
+        private
+            Dictionary<EFontType,
+            Dictionary<EFontWeight,
             Dictionary<bool,
-                Dictionary<EShadowType,
-                    Dictionary<EUnderlineType,
-                        Dictionary<int, (int, TextSettings)>>>>> SettingsTypes = new Dictionary<EFontWeight, Dictionary<bool, Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>>>();
+            Dictionary<EShadowType,
+            Dictionary<EUnderlineType,
+            Dictionary<int, (int, TextSettings)>>>>>> SettingsTypes = new Dictionary<EFontType, Dictionary<EFontWeight, Dictionary<bool, Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>>>>();
 
         private List<Color> Colors;
 
@@ -38,54 +45,79 @@ namespace RelaUI.Basics.Stylers
         private List<TextSettings> AllStyles = new List<TextSettings>();
         private List<RelaFont> AllFonts = new List<RelaFont>();
 
-        public TextStylerBasic(List<Color> colors)
+        public string GlobalFontEmoji;
+
+        public TextStylerBasic(List<Color> colors, string globalFontEmoji)
         {
             Colors = colors;
+            GlobalFontEmoji = globalFontEmoji;
         }
 
-        private (int, TextSettings) GetSettings(TextSettings baseStyle, EFontWeight weight, bool italic, EShadowType shadow,
+        private (int, TextSettings) GetSettings(TextSettings baseStyle,
+            EFontType type, EFontWeight weight, bool italic, EShadowType shadow,
             EUnderlineType underline, int colorIndex)
         {
-            if (SettingsTypes.TryGetValue(weight, out var italicDict))
+            if (SettingsTypes.TryGetValue(type, out var weightDict))
             {
-                if (italicDict.TryGetValue(italic, out var shadowDict))
+                if (weightDict.TryGetValue(weight, out var italicDict))
                 {
-                    if (shadowDict.TryGetValue(shadow, out var underlineDict))
+                    if (italicDict.TryGetValue(italic, out var shadowDict))
                     {
-                        if (underlineDict.TryGetValue(underline, out var colorDict))
+                        if (shadowDict.TryGetValue(shadow, out var underlineDict))
                         {
-                            if (colorDict.TryGetValue(colorIndex, out var foundSettings))
+                            if (underlineDict.TryGetValue(underline, out var colorDict))
                             {
-                                return foundSettings;
+                                if (colorDict.TryGetValue(colorIndex, out var foundSettings))
+                                {
+                                    return foundSettings;
+                                }
+                            }
+                            else
+                            {
+                                underlineDict.Add(underline, new Dictionary<int, (int, TextSettings)>());
                             }
                         }
                         else
                         {
-                            underlineDict.Add(underline, new Dictionary<int, (int, TextSettings)>());
+                            shadowDict.Add(shadow, new Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>());
+                            shadowDict[shadow].Add(underline, new Dictionary<int, (int, TextSettings)>());
                         }
                     }
                     else
                     {
-                        shadowDict.Add(shadow, new Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>());
-                        shadowDict[shadow].Add(underline, new Dictionary<int, (int, TextSettings)>());
+                        italicDict.Add(italic, new Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>());
+                        italicDict[italic].Add(shadow, new Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>());
+                        italicDict[italic][shadow].Add(underline, new Dictionary<int, (int, TextSettings)>());
                     }
                 }
                 else
                 {
-                    italicDict.Add(italic, new Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>());
-                    italicDict[italic].Add(shadow, new Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>());
-                    italicDict[italic][shadow].Add(underline, new Dictionary<int, (int, TextSettings)>());
+                    weightDict.Add(weight, new Dictionary<bool, Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>>());
+                    weightDict[weight].Add(italic, new Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>());
+                    weightDict[weight][italic].Add(shadow, new Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>());
+                    weightDict[weight][italic][shadow].Add(underline, new Dictionary<int, (int, TextSettings)>());
                 }
             }
             else
             {
-                SettingsTypes.Add(weight, new Dictionary<bool, Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>>());
-                SettingsTypes[weight].Add(italic, new Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>());
-                SettingsTypes[weight][italic].Add(shadow, new Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>());
-                SettingsTypes[weight][italic][shadow].Add(underline, new Dictionary<int, (int, TextSettings)>());
+                SettingsTypes.Add(type, new Dictionary<EFontWeight, Dictionary<bool, Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>>>());
+                SettingsTypes[type].Add(weight, new Dictionary<bool, Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>>());
+                SettingsTypes[type][weight].Add(italic, new Dictionary<EShadowType, Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>>());
+                SettingsTypes[type][weight][italic].Add(shadow, new Dictionary<EUnderlineType, Dictionary<int, (int, TextSettings)>>());
+                SettingsTypes[type][weight][italic][shadow].Add(underline, new Dictionary<int, (int, TextSettings)>());
             }
 
             TextSettings newStyle = baseStyle.Clone();
+            
+            // set typeset
+            if (type == EFontType.Latin)
+            {
+                newStyle.FontTypeOverride = null;
+            }
+            else if (type == EFontType.Emoji)
+            {
+                newStyle.FontTypeOverride = GlobalFontEmoji;
+            }
 
             // set weight
             newStyle.Weight = weight;
@@ -124,7 +156,7 @@ namespace RelaUI.Basics.Stylers
             AllStyles.Add(newStyle);
             AllFonts.Add(null);
             var result = (AllStyles.Count - 1, newStyle);
-            SettingsTypes[weight][italic][shadow][underline].Add(colorIndex, result);
+            SettingsTypes[type][weight][italic][shadow][underline].Add(colorIndex, result);
             return result;
         }
 
@@ -146,54 +178,62 @@ namespace RelaUI.Basics.Stylers
             List<int> switchStyles = new List<int>() { 0 };
 
             // first style is always regular
-            var firstStyleResult = GetSettings(baseStyle, EFontWeight.Regular, false, EShadowType.None, EUnderlineType.None, -1);
+            var firstStyleResult = GetSettings(baseStyle, EFontType.Latin, EFontWeight.Regular, false, EShadowType.None, EUnderlineType.None, -1);
             if (firstStyleResult.Item1 != 0)
                 throw new Exception("Default Style no longer Index 0 (this should never happen)");
             if (AllFonts[0] == null)
                 AllFonts[0] = TextHelper.GetBestFont(font, firstStyleResult.Item2);
-            var emptyStyleResult = GetSettings(baseStyle, EFontWeight.Regular, false, EShadowType.None, EUnderlineType.None, -2);
+            var emptyStyleResult = GetSettings(baseStyle, EFontType.Latin, EFontWeight.Regular, false, EShadowType.None, EUnderlineType.None, -2);
             if (emptyStyleResult.Item1 != 1)
                 throw new Exception("Empty Style no longer Index 1 (this should never happen)");
             AllFonts[1] = null;
 
             bool bolding = false;
             bool italicing = false;
+            bool emojibuffer = false;
 
             int cur = 0;
+            EFontType currentType = EFontType.Latin;
             EFontWeight currentWeight = EFontWeight.Regular;
             bool currentItalics = false;
             EShadowType currentShadow = EShadowType.None;
             EUnderlineType currentUnderline = EUnderlineType.None;
             int currentColor = -1;
 
+            void changeType(int index, EFontType type)
+            {
+                currentType = type;
+                var result = GetSettings(baseStyle, currentType, currentWeight, currentItalics, currentShadow, currentUnderline, currentColor);
+                change(index, result.Item1);
+            }
             void changeWeight(int index, EFontWeight weight)
             {
                 currentWeight = weight;
-                var result = GetSettings(baseStyle, weight, currentItalics, currentShadow, currentUnderline, currentColor);
+                var result = GetSettings(baseStyle, currentType, weight, currentItalics, currentShadow, currentUnderline, currentColor);
                 change(index, result.Item1);
             }
             void changeItalics(int index, bool italics)
             {
                 currentItalics = italics;
-                var result = GetSettings(baseStyle, currentWeight, italics, currentShadow, currentUnderline, currentColor);
+                var result = GetSettings(baseStyle, currentType, currentWeight, italics, currentShadow, currentUnderline, currentColor);
                 change(index, result.Item1);
             }
             void changeShadow(int index, EShadowType shadow)
             {
                 currentShadow = shadow;
-                var result = GetSettings(baseStyle, currentWeight, currentItalics, shadow, currentUnderline, currentColor);
+                var result = GetSettings(baseStyle, currentType, currentWeight, currentItalics, shadow, currentUnderline, currentColor);
                 change(index, result.Item1);
             }
             void changeUnderline(int index, EUnderlineType underline)
             {
                 currentUnderline = underline;
-                var result = GetSettings(baseStyle, currentWeight, currentItalics, currentShadow, underline, currentColor);
+                var result = GetSettings(baseStyle, currentType, currentWeight, currentItalics, currentShadow, underline, currentColor);
                 change(index, result.Item1);
             }
             void changeColor(int index, int color)
             {
                 currentColor = color;
-                var result = GetSettings(baseStyle, currentWeight, currentItalics, currentShadow, currentUnderline, color);
+                var result = GetSettings(baseStyle, currentType, currentWeight, currentItalics, currentShadow, currentUnderline, color);
                 change(index, result.Item1);
             }
             void change(int index, int type)
@@ -214,6 +254,13 @@ namespace RelaUI.Basics.Stylers
             {
                 bool keepInvis = false;
                 char c = text[i];
+
+                if (char.IsLowSurrogate(c))
+                {
+                    lastc = c;
+                    continue;
+                }
+
                 if (c == '\\')
                 {
                     if (lastc == '\\' && undoInvis)
@@ -241,6 +288,19 @@ namespace RelaUI.Basics.Stylers
                     }
                     lastc = c;
                     continue; // ignore escaped characters
+                }
+
+                // check alternate typesets
+                char nextc = ' ';
+                if (i < text.Length - 1)
+                    nextc = text[i + 1];
+                if (currentType != EFontType.Emoji && CharacterHelper.IsEmoji(c, nextc))
+                {
+                    changeType(i, EFontType.Emoji);
+                }
+                else if (currentType == EFontType.Emoji && !CharacterHelper.IsEmoji(c, nextc))
+                {
+                    changeType(i, EFontType.Latin);
                 }
 
                 if (c == '*')
