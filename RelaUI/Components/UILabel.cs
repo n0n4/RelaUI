@@ -21,6 +21,8 @@ namespace RelaUI.Components
         public Color BorderColor;
         public int BorderWidth;
 
+        private ITextStyler TextStyler = null;
+        private List<TextStyles> ComputedStyles = new List<TextStyles>();
 
         public string Text
         {
@@ -92,6 +94,9 @@ namespace RelaUI.Components
             {
                 TextLines.RemoveAt(TextLines.Count - 1);
             }
+
+            // try to update styling
+            ComputeStyles();
         }
 
         public override int GetWidth()
@@ -110,6 +115,10 @@ namespace RelaUI.Components
                 throw new Exception("Tried to get Text Width while uninitialized");
 
             // unsafe justification: comes from renderedText
+            if (TextStyler != null && ComputedStyles.Count > 0)
+            {
+                return TextHelper.GetWidthMultiStylesUnsafe(SFont, TextLines[0], ComputedStyles[0]);
+            }
             return TextHelper.GetWidthUnsafe(SFont, TextLines[0], FontSettings);
         }
 
@@ -123,8 +132,49 @@ namespace RelaUI.Components
 
             for (int i = 0; i < TextLines.Count; i++)
             {
-                Draw.DrawText(g, sb, SFont, dx, dy + i * SFont.LineSpacing, TextLines[i], FontSettings);
+                if (ComputedStyles.Count > i)
+                {
+                    Draw.DrawTextMultiStyles(g, sb, dx, dy + i * SFont.LineSpacing, 2, SFont.LineSpacing, TextLines[i], ComputedStyles[i]);
+                }
+                else
+                {
+                    Draw.DrawText(g, sb, SFont, dx, dy + i * SFont.LineSpacing, TextLines[i], FontSettings);
+                }
             }
+        }
+
+
+        public void SetTextStyler(ITextStyler styler)
+        {
+            TextStyler = styler;
+            ComputeStyles(); // recompute styles with the new styler
+        }
+
+        private TextStyles DefaultTextStyles = new TextStyles(new List<TextSettings>() { null }, new List<int>() { 0 }, new List<int>() { 0 }, new List<RelaFont>() { null });
+        private void ComputeStyles()
+        {
+            if (SFont == null)
+                return; // not inited
+            ComputedStyles.Clear();
+
+            if (TextStyler != null)
+                TextStyler.PreStyling();
+            for (int i = 0; i < TextLines.Count; i++)
+            {
+                // if we have no styler, use a default styles set
+                if (TextStyler == null || TextLines[i].Length <= 0)
+                {
+                    DefaultTextStyles.Styles[0] = FontSettings;
+                    DefaultTextStyles.Fonts[0] = SFont;
+                    ComputedStyles.Add(DefaultTextStyles);
+                }
+                else
+                {
+                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings, i));
+                }
+            }
+            if (TextStyler != null)
+                TextStyler.PostStyling();
         }
     }
 }

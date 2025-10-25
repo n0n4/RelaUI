@@ -14,6 +14,7 @@ namespace RelaUI.Sampler.Screens
 
         private TestUI Main;
 
+        private UILabel IntroLabel;
         private UIButton SamplerButton;
         private UIButton CodeEditorButton;
         private UIButton PaintButton;
@@ -37,6 +38,15 @@ namespace RelaUI.Sampler.Screens
             Panel.EventPostInit += (sender, args) =>
             {
                 Panel.HasBorder = false;
+            };
+
+            IntroLabel = new UILabel(0, 0, Main.Width - 40, 200, "Welcome to the *RelaUI* `Sampler` project. Please take a moment to look around.\n"
+                + "Enjoy `one` of our many *fine* samples:", fontsize: 32, autoheight: true);
+            Panel.Add(IntroLabel);
+            IntroLabel.SetTextStyler(new TextStylerTest() { MonospaceSize = 14 });
+            IntroLabel.EventPostInit += (sender, args) =>
+            {
+                IntroLabel.x = Main.Width / 2 - IntroLabel.GetTextWidth() / 2;
             };
 
             SamplerButton = new UIButton(0, 0, 0, 0, "Sampler", fontsize: 32, autoheight: true);
@@ -84,6 +94,10 @@ namespace RelaUI.Sampler.Screens
 
             // resizable components should be updated here
             int h = 25;
+            IntroLabel.Width = Main.Width - 40;
+            IntroLabel.y = h;
+            h += IntroLabel.Height;
+
             SamplerButton.Width = 250;
             SamplerButton.Height = 50;
             SamplerButton.x = Main.Width / 2 - (SamplerButton.Width / 2);

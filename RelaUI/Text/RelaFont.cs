@@ -15,7 +15,7 @@ namespace RelaUI.Text
         public SpriteFont SFont;
         private DynamicSpriteFont DFontField;
         public Dictionary<string, string> ReplaceChecks = new Dictionary<string, string>();
-        private HashSet<string> SafeChecks = new HashSet<string>() { "\t" };
+        private HashSet<string> SafeChecks = new HashSet<string>() { "\t", "\n" };
 
         public Dictionary<string, RelaFont> RelatedFonts = new Dictionary<string, RelaFont>();
 

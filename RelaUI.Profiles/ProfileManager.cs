@@ -65,6 +65,16 @@ namespace RelaUI.Profiles
             CurrentProfile = Profiles[Config.DefaultProfileName];
         }
 
+        public void SaveCurrentProfile()
+        {
+            string defpath = Path.Combine(FolderPath, "profile_" + CurrentProfile.SaveName + ".json");
+            SaveProfile(CurrentProfile, defpath);
+        }
+        public void SaveProfile(Profile<T> profile)
+        {
+            string defpath = Path.Combine(FolderPath, "profile_" + profile.SaveName + ".json");
+            SaveProfile(profile, defpath);
+        }
 
         public void ChangeProfile(string savename)
         {

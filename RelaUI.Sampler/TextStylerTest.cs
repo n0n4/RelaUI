@@ -7,6 +7,8 @@ namespace RelaUI.Sampler
 {
     public class TextStylerTest : ITextStyler
     {
+        public int MonospaceSize = 9;
+
         public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle, int lineNumber)
         {
             TextSettings style2 = baseStyle.Clone();
@@ -16,7 +18,7 @@ namespace RelaUI.Sampler
 
             TextSettings style3 = baseStyle.Clone();
             style3.Monospaced = true;
-            style3.MonospaceSize = 9;
+            style3.MonospaceSize = MonospaceSize;
 
             List<TextSettings> styles = new List<TextSettings>()
             {
