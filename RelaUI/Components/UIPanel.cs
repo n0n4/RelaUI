@@ -171,7 +171,7 @@ namespace RelaUI.Components
             {
                 // if auto has already happened, we need to revert the components to their original
                 // positions before spacing them again.
-                if (!DoneAuto)
+                if (!DoneAuto || AutoOriginalPositions.Count <= c)
                 {
                     AutoOriginalPositions.Add(c, new Vector2(comp.x, comp.y));
                 }

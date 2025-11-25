@@ -47,6 +47,9 @@ namespace RelaUI.Components
         public RelaFont SFont;
         public TextSettings FontSettings = new TextSettings();
 
+        public bool Centered = false;
+        private List<float> LineWidths = new List<float>();
+
         public UILabel(float x, float y, int w, int h, string text, string font = "", int? fontsize = null,
             bool autoheight = true)
         {
@@ -114,12 +117,19 @@ namespace RelaUI.Components
             if (!Initialized)
                 throw new Exception("Tried to get Text Width while uninitialized");
 
+            return GetTextWidth(0);
+        }
+        public int GetTextWidth(int line)
+        {
+            if (!Initialized)
+                throw new Exception("Tried to get Text Width while uninitialized");
+
             // unsafe justification: comes from renderedText
             if (TextStyler != null && ComputedStyles.Count > 0)
             {
-                return TextHelper.GetWidthMultiStylesUnsafe(SFont, TextLines[0], ComputedStyles[0]);
+                return TextHelper.GetWidthMultiStylesUnsafe(SFont, TextLines[line], ComputedStyles[line]);
             }
-            return TextHelper.GetWidthUnsafe(SFont, TextLines[0], FontSettings);
+            return TextHelper.GetWidthUnsafe(SFont, TextLines[line], FontSettings);
         }
 
         protected override void SelfRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)
@@ -132,13 +142,24 @@ namespace RelaUI.Components
 
             for (int i = 0; i < TextLines.Count; i++)
             {
+                float cx = 0;
+                if (Centered)
+                {
+                    if (LineWidths.Count <= i)
+                    {
+                        LineWidths.Add(GetTextWidth(i));
+                    }
+                    float lineWidth = LineWidths[i];
+                    cx = (Width - lineWidth) / 2;
+                }
+
                 if (ComputedStyles.Count > i)
                 {
-                    Draw.DrawTextMultiStyles(g, sb, dx, dy + i * SFont.LineSpacing, 2, SFont.LineSpacing, TextLines[i], ComputedStyles[i]);
+                    Draw.DrawTextMultiStyles(g, sb, cx + dx, dy + i * SFont.LineSpacing, 2, SFont.LineSpacing, TextLines[i], ComputedStyles[i]);
                 }
                 else
                 {
-                    Draw.DrawText(g, sb, SFont, dx, dy + i * SFont.LineSpacing, TextLines[i], FontSettings);
+                    Draw.DrawText(g, sb, SFont, cx + dx, dy + i * SFont.LineSpacing, TextLines[i], FontSettings);
                 }
             }
         }
@@ -156,6 +177,7 @@ namespace RelaUI.Components
             if (SFont == null)
                 return; // not inited
             ComputedStyles.Clear();
+            LineWidths.Clear();
 
             if (TextStyler != null)
                 TextStyler.PreStyling();
@@ -172,6 +194,9 @@ namespace RelaUI.Components
                 {
                     ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings, i));
                 }
+
+                if (Centered && Initialized)
+                    LineWidths.Add(GetTextWidth(i));
             }
             if (TextStyler != null)
                 TextStyler.PostStyling();

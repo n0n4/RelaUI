@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace RelaUI.Components
 {
+    // todo: I kind of ended up adding the textstyler functionality to the default label-- should we deprecate this one?
     public class UIRichLabel : UIComponent
     {
 

@@ -27,7 +27,7 @@ namespace RelaUI.Components
             public UIButton Button = null;
             public UIButton XButton = null;
 
-            public TabEntry(string name, string displayname, UIComponent tab, UIButton button, UIButton xbutton)
+            public TabEntry(string name, string displayname, UIComponent tab, UIButton button, UIButton? xbutton)
             {
                 Name = name;
                 DisplayName = displayname;
@@ -65,7 +65,7 @@ namespace RelaUI.Components
             Add(DisplayPanel);
         }
 
-        public void AddTab(string name, string displayname, UIComponent tab)
+        public void AddTab(string name, string displayname, UIComponent tab, bool hasClose = true)
         {
             int xmargin = 10;
             if (Tabs.Count == 0)
@@ -74,9 +74,18 @@ namespace RelaUI.Components
                 autowidth: (ButtonWidth == 0), fontsize: FontSize);
             TabPanel.AddAuto(btn);
 
-            UIButton xbtn = new UIButton(0, 0, 0, ButtonHeight, "X",
-                autowidth: true, fontsize: FontSize);
-            TabPanel.AddAuto(xbtn);
+            UIButton? xbtn = null;
+            if (hasClose)
+            {
+                xbtn = new UIButton(0, 0, 0, ButtonHeight, "X",
+                    autowidth: true, fontsize: FontSize);
+                TabPanel.AddAuto(xbtn);
+
+                xbtn.EventFocused += (s, e) =>
+                {
+                    RemoveTab(name);
+                };
+            }
 
             Tabs.Add(new TabEntry(name, displayname, tab, btn, xbtn));
             tab.Visible = false;
@@ -86,11 +95,6 @@ namespace RelaUI.Components
             btn.EventFocused += (s, e) =>
             {
                 ChangeTab(name);
-            };
-
-            xbtn.EventFocused += (s, e) =>
-            {
-                RemoveTab(name);
             };
 
             if (Tabs.Count == 1) // if no other tabs, autoselect this one
@@ -108,8 +112,9 @@ namespace RelaUI.Components
                     i--;
 
                     TabPanel.Remove(t.Button);
-                    TabPanel.Remove(t.XButton);
-                    TabPanel.Init();
+                    if (t.XButton != null)
+                        TabPanel.Remove(t.XButton);
+                    TabPanel.TryInit();
 
                     if (t.Active)
                     {
@@ -131,6 +136,24 @@ namespace RelaUI.Components
             if (Tabs.Count > 0)
             {
                 Tabs[0].Button.x = 0;
+            }
+        }
+
+        public void UpdateTab(string oldName, string newName, string newDisplayName)
+        {
+            for (int i = 0; i < Tabs.Count; i++)
+            {
+                var t = Tabs[i];
+                if (t.Name == oldName)
+                {
+                    t.Name = newName;
+                    t.DisplayName = newDisplayName;
+                    t.Button.Text = newDisplayName;
+                    if (t.Button.Initialized)
+                        t.Button.ProcessText();
+
+                    TabPanel.TryInit();
+                }
             }
         }
 

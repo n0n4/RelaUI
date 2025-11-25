@@ -43,10 +43,11 @@ namespace RelaUI.Sampler.Screens
             IntroLabel = new UILabel(0, 0, Main.Width - 40, 200, "Welcome to the *RelaUI* `Sampler` project. Please take a moment to look around.\n"
                 + "Enjoy `one` of our many *fine* samples:", fontsize: 32, autoheight: true);
             Panel.Add(IntroLabel);
+            IntroLabel.Centered = true;
             IntroLabel.SetTextStyler(new TextStylerTest() { MonospaceSize = 14 });
             IntroLabel.EventPostInit += (sender, args) =>
             {
-                IntroLabel.x = Main.Width / 2 - IntroLabel.GetTextWidth() / 2;
+                IntroLabel.x = 20;
             };
 
             SamplerButton = new UIButton(0, 0, 0, 0, "Sampler", fontsize: 32, autoheight: true);
