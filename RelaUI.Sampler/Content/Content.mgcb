@@ -129,6 +129,9 @@
 #begin DFonts/NotoSans-ThinItalic.ttf
 /copy:DFonts/NotoSans-ThinItalic.ttf
 
+#begin DFonts/NotoSansJP-Regular.ttf
+/copy:DFonts/NotoSansJP-Regular.ttf
+
 #begin DFonts/NotoSansMono-Black.ttf
 /copy:DFonts/NotoSansMono-Black.ttf
 

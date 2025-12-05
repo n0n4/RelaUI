@@ -21,7 +21,7 @@ namespace RelaUI.Integration
         public FontManager FontManager = new FontManager();
         public InputManager InputManager;
         public CursorManager CursorManager = new CursorManager();
-        public RelaConsole Console = new RelaConsole();
+        public IConsole Console = new RelaConsole();
         public HotkeyManager HotkeyManager;
         public ProfileManager<T> ProfileManager;
 

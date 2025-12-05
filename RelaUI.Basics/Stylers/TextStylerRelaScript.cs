@@ -64,6 +64,8 @@ namespace RelaUI.Basics.Stylers
         public Color? ColorCast = Pink;// Orange;
         public bool ShadowCast = false;
 
+        private List<eStyleType> LineConfigs = new List<eStyleType>();
+
         public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle, int lineNumber)
         {
             // note: expects a monospaced basestyle
@@ -86,6 +88,8 @@ namespace RelaUI.Basics.Stylers
                     style.Color = color.Value;
                 }
             }
+
+            // TODO: shouldn't we be caching all these things unless the baseStyle has changed?
 
             TextSettings stylevar = baseStyle.Clone();
             applyStyle(stylevar, ColorVar, ShadowVar);
@@ -147,6 +151,12 @@ namespace RelaUI.Basics.Stylers
             eStyleType cur = eStyleType.BASE;
             bool singlequotestring = false;
             int keybypass = 0;
+
+            if (LineConfigs.Count > lineNumber - 1 && lineNumber - 1 >= 0)
+            {
+                var lastConfig = LineConfigs[lineNumber - 1];
+                cur = lastConfig;
+            }
 
             void change(int index, eStyleType type)
             {
@@ -294,6 +304,10 @@ namespace RelaUI.Basics.Stylers
 
                 lastc = c;
             }
+
+            while (LineConfigs.Count <= lineNumber)
+                LineConfigs.Add(0);
+            LineConfigs[lineNumber] = cur;
 
             return new TextStyles(styles, switches, switchStyles, fonts);
         }

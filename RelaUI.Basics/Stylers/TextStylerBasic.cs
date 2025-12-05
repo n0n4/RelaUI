@@ -11,6 +11,15 @@ namespace RelaUI.Basics.Stylers
 {
     public class TextStylerBasic : ITextStyler
     {
+        public struct BasicConfig
+        {
+            public EUnderlineType Underline;
+            public EShadowType Shadow;
+            public EFontType Font;
+            public EFontWeight Weight;
+            public bool Italics;
+            public int Color;
+        }
         public enum EUnderlineType
         {
             None,
@@ -44,6 +53,7 @@ namespace RelaUI.Basics.Stylers
         private TextSettings LastStyle;
         private List<TextSettings> AllStyles = new List<TextSettings>();
         private List<RelaFont> AllFonts = new List<RelaFont>();
+        private List<BasicConfig> LineConfigs = new List<BasicConfig>();
 
         public string GlobalFontEmoji;
 
@@ -200,6 +210,24 @@ namespace RelaUI.Basics.Stylers
             EUnderlineType currentUnderline = EUnderlineType.None;
             int currentColor = -1;
 
+            if (LineConfigs.Count > lineNumber - 1 && lineNumber - 1 >= 0)
+            {
+                var currentConfig = LineConfigs[lineNumber - 1];
+                currentType = currentConfig.Font;
+                currentWeight = currentConfig.Weight;
+                bolding = currentWeight != EFontWeight.Regular;
+                currentItalics = currentConfig.Italics;
+                italicing = currentConfig.Italics;
+                currentShadow = currentConfig.Shadow;
+                currentUnderline = currentConfig.Underline;
+                currentColor = currentConfig.Color;
+
+                var result = GetSettings(baseStyle, currentType, currentWeight, currentItalics, currentShadow, currentUnderline, currentColor);
+                switches.Clear();
+                switchStyles.Clear();
+                change(0, result.Item1);
+            }
+
             void changeType(int index, EFontType type)
             {
                 currentType = type;
@@ -345,6 +373,18 @@ namespace RelaUI.Basics.Stylers
                 }
                 lastc = c;
             }
+
+            while (LineConfigs.Count <= lineNumber)
+                LineConfigs.Add(new BasicConfig());
+            LineConfigs[lineNumber] = new BasicConfig()
+            {
+                Weight = currentWeight,
+                Color = currentColor,
+                Italics = currentItalics,
+                Font = currentType,
+                Shadow = currentShadow,
+                Underline = currentUnderline
+            };
 
             return new TextStyles(AllStyles, switches, switchStyles, AllFonts);
         }

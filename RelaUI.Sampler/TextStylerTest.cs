@@ -9,6 +9,8 @@ namespace RelaUI.Sampler
     {
         public int MonospaceSize = 9;
 
+        public List<int> LineConfigs = new List<int>();
+
         public TextStyles GetTextStyles(RelaFont font, string text, TextSettings baseStyle, int lineNumber)
         {
             TextSettings style2 = baseStyle.Clone();
@@ -36,6 +38,22 @@ namespace RelaUI.Sampler
 
             bool incode = false;
             bool inshadow = false;
+
+            if (LineConfigs.Count > lineNumber - 1 && lineNumber - 1 >= 0)
+            {
+                var lastConfig = LineConfigs[lineNumber - 1];
+                if (lastConfig == 2)
+                {
+                    incode = true;
+                    switchStyles[0] = 2;
+                }
+                else if (lastConfig == 1)
+                {
+                    inshadow = true;
+                    switchStyles[0] = 1;
+                }
+            }
+
             for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
@@ -70,6 +88,10 @@ namespace RelaUI.Sampler
                     }
                 }
             }
+
+            while (LineConfigs.Count <= lineNumber)
+                LineConfigs.Add(0);
+            LineConfigs[lineNumber] = incode ? 2 : inshadow ? 1 : 0;
 
             return new TextStyles(styles, switches, switchStyles, fonts);
         }

@@ -20,12 +20,14 @@ namespace RelaUI.Sampler.Screens
         private UIButton PaintButton;
         private UIButton SpreadsheetButton;
         private UIButton RichTextButton;
+        private UIButton JPTextButton;
 
         private SamplerScreen SamplerScreen;
         private CodeEditorScreen CodeEditorScreen;
         private PaintScreen PaintScreen;
         private SpreadsheetScreen SpreadsheetScreen;
         private RichTextScreen RichTextScreen;
+        private JPTextScreen JPTextScreen;
 
         public HomeScreen(TestUI main)
         {
@@ -41,7 +43,7 @@ namespace RelaUI.Sampler.Screens
             };
 
             IntroLabel = new UILabel(0, 0, Main.Width - 40, 200, "Welcome to the *RelaUI* `Sampler` project. Please take a moment to look around.\n"
-                + "Enjoy `one` of our many *fine* samples:", fontsize: 32, autoheight: true);
+                + "Enjoy `one` of our many *fine samples*:", fontsize: 32, autoheight: true);
             Panel.Add(IntroLabel);
             IntroLabel.Centered = true;
             IntroLabel.SetTextStyler(new TextStylerTest() { MonospaceSize = 14 });
@@ -83,6 +85,13 @@ namespace RelaUI.Sampler.Screens
             RichTextButton.EventFocused += (sender, args) =>
             {
                 OpenRichText();
+            };
+
+            JPTextButton = new UIButton(0, 0, 0, 0, "JP Text", fontsize: 32, autoheight: true);
+            Panel.Add(JPTextButton);
+            JPTextButton.EventFocused += (sender, args) =>
+            {
+                OpenJPText();
             };
 
             Resize(main.Width, main.Height);
@@ -127,6 +136,12 @@ namespace RelaUI.Sampler.Screens
             RichTextButton.Height = 50;
             RichTextButton.x = Main.Width / 2 - (RichTextButton.Width / 2);
             RichTextButton.y = h;
+            h += 75;
+
+            JPTextButton.Width = 250;
+            JPTextButton.Height = 50;
+            JPTextButton.x = Main.Width / 2 - (JPTextButton.Width / 2);
+            JPTextButton.y = h;
             h += 75;
 
             // reinit if appropriate
@@ -201,6 +216,16 @@ namespace RelaUI.Sampler.Screens
             }
 
             Main.Load(RichTextScreen);
+        }
+
+        public void OpenJPText()
+        {
+            if (JPTextScreen == null)
+            {
+                JPTextScreen = new JPTextScreen(Main);
+            }
+
+            Main.Load(JPTextScreen);
         }
     }
 }

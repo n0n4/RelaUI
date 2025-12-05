@@ -1,13 +1,13 @@
 ﻿using RelaUI.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace RelaUI.Console
 {
     public class RelaConsole : IConsole
     {
         public List<string> Logs = new List<string>();
+        public Action<string> InputAction = null;
 
         public void Error(string s)
         {
@@ -22,7 +22,8 @@ namespace RelaUI.Console
         public void Input(string input)
         {
             Logs.Add("<  " + input);
-            // todo: process user commands
+            if (InputAction != null)
+                InputAction(input);
         }
 
         public void Log(string s)
