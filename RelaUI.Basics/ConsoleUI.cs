@@ -84,6 +84,15 @@ namespace RelaUI.Basics
                 InputField.CaretPosition = 0;
                 Console.Input(inputtext);
             };
+            InputField.EventTextChanged += (sender, args) =>
+            {
+                var eargs = args as UITextField.EventTextChangedHandlerArgs;
+                if (InputField.Text == "`")
+                {
+                    InputField.SetText("", eargs.ElapsedMS, eargs.Input);
+                    ToggleConsole(eargs.ElapsedMS, eargs.Input);
+                }
+            };
             LogPanel.AddAuto(InputField);
 
             UISystem.Add(LogPanel);
@@ -107,6 +116,11 @@ namespace RelaUI.Basics
         public UISystem GetUISystem()
         {
             return UISystem;
+        }
+
+        public bool IsVisible()
+        {
+            return LogPanel.Visible;
         }
 
         public void Update(float elapsedms, InputManager input)
@@ -155,21 +169,26 @@ namespace RelaUI.Basics
         public void RegisterHotkeys(HotkeyManager hotkeyManager)
         {
             //register hotkey to open close
-            hotkeyManager.Register("Toggle Console", GetName(), ToggleConsole);
+            hotkeyManager.Register("Toggle Console", GetName(), ToggleConsoleKeybind);
         }
 
-        public bool ToggleConsole(float elapsedms, InputManager input, Keys[] keys, int keyCount)
+        public bool ToggleConsoleKeybind(float elapsedms, InputManager input, Keys[] keys, int keyCount)
         {
             if (!input.IsAtLeastOnePressed(keys, keyCount))
                 return false;
 
+            ToggleConsole(elapsedms, input);
+            return true;
+        }
+
+        public void ToggleConsole(float elapsedms, InputManager input)
+        {
             LogPanel.Visible = !LogPanel.Visible;
             if (LogPanel.Visible)
             {
                 Boss.Unfocus(elapsedms, input);
                 Boss.Focus(InputField, elapsedms, input, 0, 0);
             }
-            return true;
         }
     }
 }

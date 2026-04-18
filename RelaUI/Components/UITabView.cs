@@ -8,7 +8,7 @@ namespace RelaUI.Components
     {
         public UIPanel TabPanel = null;
         public UIPanel DisplayPanel = null;
-        private List<TabEntry> Tabs = new List<TabEntry>();
+        public List<TabEntry> Tabs = new List<TabEntry>();
 
         /// <summary>
         /// If ButtonWidth is 0, buttons will be as large as their text requires
@@ -18,7 +18,7 @@ namespace RelaUI.Components
 
         public int FontSize = 16;
 
-        private class TabEntry
+        public class TabEntry
         {
             public string Name = string.Empty;
             public string DisplayName = string.Empty;
