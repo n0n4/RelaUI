@@ -189,6 +189,10 @@ namespace RelaUI.Basics
                 Boss.Unfocus(elapsedms, input);
                 Boss.Focus(InputField, elapsedms, input, 0, 0);
             }
+            else
+            {
+                Boss.Unfocus(elapsedms, input);
+            }
         }
     }
 }

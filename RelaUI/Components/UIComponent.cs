@@ -360,12 +360,19 @@ namespace RelaUI.Components
         {
             SelfFocusedInput(elapsedms, input);
             if (Parent != null)
-                Parent.SelfParentInput(elapsedms, input);
+                Parent.ParentInput(elapsedms, input);
         }
 
         public virtual void SelfFocusedInput(float elapsedms, InputManager input)
         {
             // overwrite this if you need to do something with key input while focused
+        }
+
+        public void ParentInput(float elapsedms, InputManager input)
+        {
+            SelfParentInput(elapsedms, input);
+            if (Parent != null)
+                Parent.ParentInput(elapsedms, input);
         }
 
         public virtual void SelfParentInput(float elapsedms, InputManager input)

@@ -99,6 +99,12 @@ namespace RelaUI.Sampler.Screens
             // panel 6
             UIPanel panel6 = new UIPanel(200, 200, 150, 150, true, "Scroll Vert Test", hasscrolling: true, scrollh: 400);
             Panel.Add(panel6);
+            UIButton nothingbtn = new UIButton(0, 0, 100, 30, "does nothing");
+            panel6.AddAuto(nothingbtn);
+            UIPanel nestedPanel = new UIPanel(0, 0, 120, 50);
+            panel6.AddAuto(nestedPanel);
+            UIButton nothingbtn2 = new UIButton(0, 0, 100, 30, "nested");
+            nestedPanel.AddAuto(nothingbtn2);
             UILabel label4 = new UILabel(0, 10, panel6.Width - 20, 350, "newlines \n should be auto processed 1\n 2\n 3\n 4\n 5\n test the bottom \n test", fontsize: 16);
             panel6.AddAuto(label4);
 

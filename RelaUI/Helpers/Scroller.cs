@@ -128,6 +128,9 @@ namespace RelaUI.Helpers
                     OffsetX = ScrollWidth - width;
                 }
             }
+
+            //todo; // need some way to let mouse scroll trigger even when this isn't focused
+
             int scrolldiff = input.FreshMouseScrollDifference();
             if (scrolldiff > 0)
             {

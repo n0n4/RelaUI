@@ -74,6 +74,11 @@ namespace RelaUI
             comp.GetFocus(elapsedms, input, dx, dy);
         }
 
+        public UIComponent GetFocusedComponent()
+        {
+            return FocusedComponent;
+        }
+
         public void Update(float elapsedms, InputManager input)
         {
             // handle focus requests from components

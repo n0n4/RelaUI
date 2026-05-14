@@ -16,6 +16,7 @@ namespace RelaUI.Text
         public Dictionary<string, Dictionary<int, SpriteFont>> Fonts = new Dictionary<string, Dictionary<int, SpriteFont>>();
         public Dictionary<string, DynamicSpriteFont> DynamicFonts = new Dictionary<string, DynamicSpriteFont>();
         public Dictionary<string, Dictionary<int, RelaFont>> RelaFonts = new Dictionary<string, Dictionary<int, RelaFont>>();
+        public Dictionary<string, Dictionary<string, string>> ManualRelatedFonts = new Dictionary<string, Dictionary<string, string>>();
 
         public List<string> GlobalFontNames = new List<string>();
         public void Load(ContentManager content)
@@ -170,6 +171,15 @@ namespace RelaUI.Text
                 if (name != globalfont)
                 {
                     rfont.RelatedFonts.Add(globalfont, ResolveRelaFont(globalfont, size));
+                }
+            }
+
+            // add manual links
+            if (ManualRelatedFonts.TryGetValue(name, out var manual))
+            {
+                foreach (var kvp in manual)
+                {
+                    rfont.RelatedFonts.Add(kvp.Key, ResolveRelaFont(kvp.Value, size));
                 }
             }
 

@@ -42,6 +42,11 @@ namespace RelaUI.Styles
         public Color ButtonPressedTextColor = DefaultForegroundColor;
         public Color ButtonDisabledTextColor = new Color(200, 200, 200);
 
+        // font style
+        public string DefaultFont = string.Empty;
+        public string DefaultDynamicFont = string.Empty;
+        public Dictionary<string, Dictionary<string, string>> ManualRelatedFonts = new Dictionary<string, Dictionary<string, string>>();
+
         [JsonIgnore]
         public FontManager FontManager;
 
@@ -84,6 +89,12 @@ namespace RelaUI.Styles
         public void Setup(FontManager fontmanager)
         {
             FontManager = fontmanager;
+
+            if (!string.IsNullOrEmpty(DefaultFont))
+                fontmanager.DefaultFont = DefaultFont;
+            if (!string.IsNullOrEmpty(DefaultDynamicFont))
+                fontmanager.DefaultDynamicFont = DefaultDynamicFont;
+            fontmanager.ManualRelatedFonts = ManualRelatedFonts;
         }
 
         public static UIStyle Load(string path, FontManager fontmanager, out bool success, out string errormsg)

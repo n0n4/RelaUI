@@ -371,7 +371,13 @@ namespace RelaUI.Text
 
             string suffix;
             if (italic)
+            {
                 suffix = FontWeightItalicNames[weight];
+                if (weight != EFontWeight.Regular)
+                {
+                    suffix = FontWeightNames[weight] + suffix;
+                }
+            }
             else
                 suffix = FontWeightNames[weight];
 

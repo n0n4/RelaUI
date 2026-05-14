@@ -112,7 +112,7 @@ namespace RelaUI.Components
             TitleFontSettings.FontSize = titlesize;
 
             Scroller = new Scroller(
-                () => Width, () => Height, () => x, () => y, 0);
+                GetWidth, GetHeight, GetX, GetY, 0);
 
             if (hasscrolling)
             {
@@ -130,6 +130,16 @@ namespace RelaUI.Components
                 CloseButton.SkipBaseRender = true;
                 Add(CloseButton);
             }
+        }
+
+        private float GetX()
+        {
+            return x;
+        }
+
+        private float GetY()
+        {
+            return y;
         }
 
         public override void AddAuto(UIComponent comp)
