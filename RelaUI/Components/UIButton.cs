@@ -53,6 +53,10 @@ namespace RelaUI.Components
         public TextSettings FontSettings = new TextSettings();
         public eUIJustify Justified = eUIJustify.CENTER;
 
+        private ITextStyler TextStyler = null;
+        private List<TextStyles> ComputedStyles = new List<TextStyles>();
+        private TextStyles DefaultTextStyles = new TextStyles(new List<TextSettings>() { null }, new List<int>() { 0 }, new List<int>() { 0 }, new List<RelaFont>() { null });
+
         public int PressedTimer = 0;
 
         // if both are specified, only autowidth will be adhered to
@@ -138,11 +142,49 @@ namespace RelaUI.Components
 
         public void ProcessText()
         {
+            if (SFont == null)
+                return;
+
             TextLines = TextHelper.FitToBox(SFont, RenderedText, Width, Height, FontSettings, TextSplitWords);
             while (TextLines.Count * SFont.LineSpacing > Height)
             {
                 TextLines.RemoveAt(TextLines.Count - 1);
             }
+
+            if (TextStyler != null)
+                ComputeStyles();
+        }
+
+        public void SetTextStyler(ITextStyler styler)
+        {
+            TextStyler = styler;
+            ComputeStyles();
+        }
+
+        private void ComputeStyles()
+        {
+            if (SFont == null)
+                return;
+
+            ComputedStyles.Clear();
+
+            if (TextStyler != null)
+                TextStyler.PreStyling();
+            for (int i = 0; i < TextLines.Count; i++)
+            {
+                if (TextStyler == null || TextLines[i].Length <= 0)
+                {
+                    DefaultTextStyles.Styles[0] = FontSettings;
+                    DefaultTextStyles.Fonts[0] = SFont;
+                    ComputedStyles.Add(DefaultTextStyles);
+                }
+                else
+                {
+                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings, i));
+                }
+            }
+            if (TextStyler != null)
+                TextStyler.PostStyling();
         }
 
         public override int GetWidth()
@@ -221,23 +263,32 @@ namespace RelaUI.Components
                 {
                     mod += diff / 2;
                 }
-                // Unsafe justification: this text comes from the rendered text
-                int textwidth = TextHelper.GetWidthUnsafe(SFont, TextLines[0], FontSettings);
-                int wdiff = Width - textwidth;
-                int wmod = 0;
-                if (wdiff > 0)
-                {
-                    if (Justified == eUIJustify.CENTER)
-                        wmod += wdiff / 2;
-                    else if (Justified == eUIJustify.LEFT)
-                        wmod += BorderWidth * 2; // add some spacing so it doesn't go off the edge by default
-                    else if (Justified == eUIJustify.RIGHT)
-                        wmod += wdiff - BorderWidth * 2;
-                }
+
                 FontSettings.Color = tc;
+                if (TextStyler != null)
+                    ComputeStyles();
+
                 for (int i = 0; i < TextLines.Count; i++)
                 {
-                    Draw.DrawText(g, sb, SFont, wmod + dx, mod + dy + i * SFont.LineSpacing, TextLines[i], FontSettings);
+                    int textwidth = TextStyler != null && ComputedStyles.Count > i
+                        ? TextHelper.GetWidthMultiStylesUnsafe(SFont, TextLines[i], ComputedStyles[i])
+                        : TextHelper.GetWidthUnsafe(SFont, TextLines[i], FontSettings);
+                    int wdiff = Width - textwidth;
+                    int wmod = 0;
+                    if (wdiff > 0)
+                    {
+                        if (Justified == eUIJustify.CENTER)
+                            wmod += wdiff / 2;
+                        else if (Justified == eUIJustify.LEFT)
+                            wmod += BorderWidth * 2; // add some spacing so it doesn't go off the edge by default
+                        else if (Justified == eUIJustify.RIGHT)
+                            wmod += wdiff - BorderWidth * 2;
+                    }
+
+                    if (TextStyler != null && ComputedStyles.Count > i)
+                        Draw.DrawTextMultiStyles(g, sb, wmod + dx, mod + dy + i * SFont.LineSpacing, 2, SFont.LineSpacing, TextLines[i], ComputedStyles[i]);
+                    else
+                        Draw.DrawText(g, sb, SFont, wmod + dx, mod + dy + i * SFont.LineSpacing, TextLines[i], FontSettings);
                 }
             }
             if (HasBorder)
