@@ -346,6 +346,14 @@ namespace RelaUI.Components
             return false;
         }
 
+        protected override bool SelfHandleHoverScroll(InputManager input, float dx, float dy)
+        {
+            if (!HasScrolling)
+                return false;
+
+            return Scroller.HandleMouseScroll(input);
+        }
+
         protected override void SelfGetFocus(float elapsedms, InputManager input)
         {
             // check for scrollbars 

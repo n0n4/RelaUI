@@ -107,6 +107,16 @@ namespace RelaUI
                 }
             }
 
+            // send mouse wheel input to scrollers first, so hovered scrollers that aren't focused can scroll
+            if (input.FreshMouseScrollDifference() != 0)
+            {
+                for (int i = UIHandles.Count - 1; i >= 0; i--)
+                {
+                    if (UIHandles[i].GetUISystem().HandleHoverScroll(input))
+                        break;
+                }
+            }
+
             // send input to focused component
             if (FocusedComponent != null)
             {

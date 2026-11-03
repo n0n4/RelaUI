@@ -129,7 +129,13 @@ namespace RelaUI.Helpers
                 }
             }
 
-            //todo; // need some way to let mouse scroll trigger even when this isn't focused
+            HandleMouseScroll(input);
+        }
+
+        public bool HandleMouseScroll(InputManager input)
+        {
+            if (GetScrollYMax() <= 0)
+                return false;
 
             int scrolldiff = input.FreshMouseScrollDifference();
             if (scrolldiff > 0)
@@ -140,6 +146,7 @@ namespace RelaUI.Helpers
                     OffsetY = 0;
                 }
                 input.CaptureMouseScroll();
+                return true;
             }
             else if (scrolldiff < 0)
             {
@@ -149,7 +156,10 @@ namespace RelaUI.Helpers
                     OffsetY = GetScrollYMax();
                 }
                 input.CaptureMouseScroll();
+                return true;
             }
+
+            return false;
         }
 
         private bool UpdateScrolling(float elapsedms, InputManager input)

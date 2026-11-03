@@ -188,6 +188,34 @@ namespace RelaUI.Components
                 && input.State.MousePos.Y < (int)(Math.Floor(dy)) + GetHeight();
         }
 
+        public bool HandleHoverScroll(InputManager input, float dx, float dy)
+        {
+            if (!Enabled || !Visible)
+                return false;
+
+            dx += x;
+            dy += y;
+            if (!Hovering(dx, dy, input))
+                return false;
+
+            if (ComponentsVisible)
+            {
+                for (int i = Components.Count - 1; i >= 0; i--)
+                {
+                    UIComponent comp = Components[i];
+                    if (comp.HandleHoverScroll(input, dx + InnerX, dy + InnerY))
+                        return true;
+                }
+            }
+
+            return SelfHandleHoverScroll(input, dx, dy);
+        }
+
+        protected virtual bool SelfHandleHoverScroll(InputManager input, float dx, float dy)
+        {
+            return false;
+        }
+
         public bool Clicking(float dx, float dy, InputManager input)
         {
             return input.MouseReleased(eMouseButtons.Left)

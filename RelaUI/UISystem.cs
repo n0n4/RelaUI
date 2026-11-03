@@ -73,6 +73,27 @@ namespace RelaUI
             return null;
         }
 
+        public bool HandleHoverScroll(InputManager input)
+        {
+            // if focus is lost, only comps inside the locked focus comp can scroll
+            for (int i = Components.Count - 1; i >= 0; i--)
+            {
+                if (Components[i].LockFocus)
+                {
+                    Components[i].HandleHoverScroll(input, 0, 0);
+                    return true;
+                }
+            }
+
+            for (int i = Components.Count - 1; i >= 0; i--)
+            {
+                if (Components[i].HandleHoverScroll(input, 0, 0))
+                    return true;
+            }
+
+            return false;
+        }
+
         public UIComponent ProposeFocus()
         {
             UIComponent comp = ProposedFocus;
