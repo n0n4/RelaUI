@@ -47,6 +47,10 @@ namespace RelaUI.Styles
         public string DefaultDynamicFont = string.Empty;
         public Dictionary<string, Dictionary<string, string>> ManualRelatedFonts = new Dictionary<string, Dictionary<string, string>>();
 
+        // highlight style
+        public Color HighlightColor = Color.DarkRed;
+        public int HighlightWidth = 2;
+
         [JsonIgnore]
         public FontManager FontManager;
 
@@ -84,6 +88,9 @@ namespace RelaUI.Styles
             ButtonDisabledTextColor = style.ButtonDisabledTextColor;
 
             FontManager = style.FontManager;
+
+            HighlightColor = style.HighlightColor;
+            HighlightWidth = style.HighlightWidth;
         }
 
         public void Setup(FontManager fontmanager)

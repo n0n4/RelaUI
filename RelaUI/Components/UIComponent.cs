@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using RelaUI.Input;
 using RelaUI.Styles;
 using System;
@@ -28,6 +29,10 @@ namespace RelaUI.Components
         public bool Initialized { private set; get; } = false;
 
         public bool LockFocus = false; // if this is true, no other components can get input unless they're children of this
+
+        public Color HighlightColor = Color.DarkRed;
+        public int HighlightWidth = 2;
+        public bool Highlighted = false;
 
         protected readonly object EventLock = new object();
 
@@ -104,6 +109,9 @@ namespace RelaUI.Components
             // and selfinit happens after components are init'd which seems wrong to me
             // ------------------------------------------------------------------------
 
+            HighlightColor = Style.HighlightColor;
+            HighlightWidth = Style.HighlightWidth;
+
             // because style is always inherited, to have custom styles you should use a pre or post
             // init event to set it (pre if you want it to be inherited in turn)
             SelfPreInit();
@@ -150,6 +158,8 @@ namespace RelaUI.Components
                 }
             }
             SelfOverRender(elapsedms, g, sb, input, dx, dy);
+            if (Highlighted)
+                SelfHighlightRender(elapsedms, g, sb, input, dx, dy);
         }
 
         protected virtual void SelfRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)
@@ -161,6 +171,15 @@ namespace RelaUI.Components
         protected virtual void SelfOverRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)
         {
             // overwrite this
+        }
+
+        // for drawing a highlight on top of child components
+        protected virtual void SelfHighlightRender(float elapsedms, GraphicsDevice g, SpriteBatch sb, InputManager input, float dx, float dy)
+        {
+            int w = GetWidth();
+            int h = GetHeight();
+
+            Draw.DrawRectangleHandleOutline(sb, (int)dx, (int)dy, w, h, HighlightColor, HighlightWidth);
         }
 
         protected virtual void SelfDispose()
