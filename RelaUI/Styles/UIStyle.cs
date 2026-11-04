@@ -44,6 +44,8 @@ namespace RelaUI.Styles
         public Color ButtonPressedTextColor = DefaultForegroundColor;
         public Color ButtonDisabledTextColor = new Color(200, 200, 200);
 
+        public Dictionary<string, Color> CustomColors = new Dictionary<string, Color>();
+
         // font style
         public string DefaultFont = string.Empty;
         public string DefaultDynamicFont = string.Empty;
