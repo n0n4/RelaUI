@@ -11,6 +11,8 @@ namespace RelaUI.Styles
 {
     public class UIStyle
     {
+        public string Name = "Default";
+
         public static Color DefaultBackgroundColor = new Color(31, 31, 31);
         public static Color DefaultSecondaryColor = new Color(46, 46, 46);
         public static Color DefaultAccentColor = new Color(56, 56, 56);
@@ -131,8 +133,9 @@ namespace RelaUI.Styles
             return loaded;
         }
 
-        public static bool Save(string path, UIStyle style, out string errormsg)
+        public static bool Save(string folderPath, UIStyle style, out string errormsg)
         {
+            string path = Path.Combine(folderPath, style.Name + ".json");
             errormsg = "";
             try
             {

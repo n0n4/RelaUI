@@ -26,10 +26,11 @@ namespace RelaUI.Integration
         public ProfileManager<T> ProfileManager;
 
         public string DefaultHotkeysLocation = ".\\hotkeys.json";
-        public string DefaultUIStyleLocation = ".\\Styles\\";
+        public string DefaultUIStyleFolderLocation = ".\\Styles\\";
+        public string DefaultUIStyleName = "Default.json";
         public string DefaultCrashLogLocation = ".\\crash.log";
         public string DefaultNormalLogLocation = ".\\last.log";
-        public string DefaultProfilesLocation = ".\\Profiles\\";
+        public string DefaultProfilesFolderLocation = ".\\Profiles\\";
 
         public void LoadContent(
             ContentManager content,
@@ -37,7 +38,7 @@ namespace RelaUI.Integration
             int defaultFontSize = 16)
         {
             // create the profile manager
-            ProfileManager = new ProfileManager<T>(DefaultProfilesLocation,
+            ProfileManager = new ProfileManager<T>(DefaultProfilesFolderLocation,
                 makeDefaultProfile, (s) => { Console.Error(s); });
 
             // load the fonts
@@ -54,7 +55,7 @@ namespace RelaUI.Integration
             // user edits to it will not be persisted
             if (styleName != Profile<T>.DefaultStyle)
             {
-                Style = UIStyle.Load(DefaultUIStyleLocation, FontManager, out success, out errormsg);
+                Style = UIStyle.Load(Path.Combine(DefaultUIStyleFolderLocation, styleName + ".json"), FontManager, out success, out errormsg);
             }
             else
             {
@@ -64,7 +65,7 @@ namespace RelaUI.Integration
             }
             if (!success)
             {
-                UIStyle.Save(DefaultUIStyleLocation, Style, out errormsg);
+                UIStyle.Save(DefaultUIStyleFolderLocation, Style, out errormsg);
             }
             CursorManager.SetCursor(Style.CursorStyle, Style.CursorColor);
 
