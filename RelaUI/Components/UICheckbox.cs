@@ -1,7 +1,5 @@
 ﻿using RelaUI.Input;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace RelaUI.Components
 {
@@ -13,6 +11,7 @@ namespace RelaUI.Components
             bool autowidth = false, bool autoheight = false)
             : base(x, y, w, h, "X", font, fontsize, autowidth, autoheight)
         {
+
             EventFocused += (sender, args) =>
             {
                 var eargs = args as UIComponent.EventFocusedHandlerArgs;

@@ -286,6 +286,21 @@ namespace RelaUI.Input
             }
         }
 
+        public void ReapplyProfile()
+        {
+            foreach (HotkeyTreeNode node in StrokeTree.Values)
+                node.Destroy();
+            StrokeTree.Clear();
+
+            foreach (KeyValuePair<string, Dictionary<string, Func<float, InputManager, Keys[], int, bool>>> source in HotkeyFunctions)
+            {
+                foreach (KeyValuePair<string, Func<float, InputManager, Keys[], int, bool>> name in source.Value)
+                {
+                    Register(name.Key, source.Key, name.Value);
+                }
+            }
+        }
+
         public List<HotkeySave> MergeHotkeySaves(List<HotkeySave> lista, List<HotkeySave> listb)
         {
             // note: listb takes priority

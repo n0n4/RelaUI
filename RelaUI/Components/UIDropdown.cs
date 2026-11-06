@@ -11,6 +11,18 @@ namespace RelaUI.Components
         public UIPanel PopupPanel = null;
         public UIAutoList SubList = null;
 
+        public bool HasOptionBorders
+        {
+            get { return SubList.HasBorder; }
+            set { SubList.HasBorder = value; }
+        }
+
+        public bool HasOptionOuterBorder
+        {
+            get { return SubList.HasOuterBorder; }
+            set { SubList.HasOuterBorder = value; }
+        }
+
         // A note...
         // if we remove the popup panel as soon as focus is lost, it is actually flipped
         // to invisible before the input checks
@@ -30,7 +42,7 @@ namespace RelaUI.Components
             SubList = new UIAutoList(eUIOrientation.VERTICAL, w, h, fixedindexwidth: w, fixedindexheight: h);
             SubList.MarginX = 0;
             SubList.MarginY = 0;
-            PopupPanel = new UIPanel(0, h, w, 1);
+            PopupPanel = new UIPanel(0, h, w, 1, hasscrolling: true);
             PopupPanel.InnerMargin = 0;
             PopupPanel.Visible = false;
 
@@ -76,8 +88,46 @@ namespace RelaUI.Components
                     PopupPanel.Visible = false;
             }
 
+            // make sure that the whole options popup is visible
+            const int margin = 8;
+            int windowHeight = g.PresentationParameters.BackBufferHeight;
+            int contentHeight = SubList.GetHeight();
+            if (contentHeight < 1)
+                contentHeight = 1;
+            // how much space do we have until we hit the window bottom?
+            int bottomSpace = windowHeight - ((int)dy + Height) - margin;
+            int topSpace = (int)dy - margin;
+
+            // open up if there's not enough room below us
+            bool openUp = bottomSpace < 200;
+            int available = bottomSpace;
+            if (openUp)
+            {
+                available = topSpace;
+            }
+
+            if (available < 1)
+                available = 1;
+
+            int popupHeight = Math.Min(contentHeight, available);
+            int popupY = openUp
+                ? (int)dy - popupHeight
+                : (int)dy + Height;
+
+            if (popupY < margin)
+                popupY = margin;
+            if (popupY + popupHeight > windowHeight - margin)
+                popupY = Math.Max(margin, windowHeight - margin - popupHeight);
+
             PopupPanel.x = dx;
-            PopupPanel.y = dy + Height;
+            PopupPanel.y = popupY;
+            PopupPanel.Width = Width;
+            PopupPanel.Height = popupHeight;
+            PopupPanel.ScrollHeight = contentHeight;
+
+            int maxScroll = PopupPanel.Scroller.GetScrollYMax();
+            if (PopupPanel.Scroller.OffsetY > maxScroll)
+                PopupPanel.Scroller.OffsetY = maxScroll;
         }
 
         protected override void SelfPreInit()
@@ -96,6 +146,8 @@ namespace RelaUI.Components
                 {
                     root.Add(PopupPanel);
                 }
+
+                PopupPanel.Init();
             }
         }
     }

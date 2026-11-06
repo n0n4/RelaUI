@@ -45,6 +45,7 @@ namespace RelaUI.Styles
         public Color ButtonDisabledTextColor = new Color(200, 200, 200);
 
         public Dictionary<string, Color> CustomColors = new Dictionary<string, Color>();
+        public Dictionary<string, int> CustomInts = new Dictionary<string, int>();
 
         // font style
         public string DefaultFont = string.Empty;
@@ -95,6 +96,9 @@ namespace RelaUI.Styles
 
             HighlightColor = style.HighlightColor;
             HighlightWidth = style.HighlightWidth;
+
+            CustomColors = new Dictionary<string, Color>(style.CustomColors);
+            CustomInts = new Dictionary<string, int>(style.CustomInts);
         }
 
         public void Setup(FontManager fontmanager)

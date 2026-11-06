@@ -48,6 +48,7 @@ namespace RelaUI.Components
         public TextSettings FontSettings = new TextSettings();
 
         public bool Centered = false;
+        public bool RightAligned = false; // todo: should probably deprecate these and make this use an EAlignment
         private List<float> LineWidths = new List<float>();
 
         public UILabel(float x, float y, int w, int h, string text, string font = "", int? fontsize = null,
@@ -143,14 +144,14 @@ namespace RelaUI.Components
             for (int i = 0; i < TextLines.Count; i++)
             {
                 float cx = 0;
-                if (Centered)
+                if (Centered || RightAligned)
                 {
                     if (LineWidths.Count <= i)
                     {
                         LineWidths.Add(GetTextWidth(i));
                     }
                     float lineWidth = LineWidths[i];
-                    cx = (Width - lineWidth) / 2;
+                    cx = Centered ? (Width - lineWidth) / 2 : Width - lineWidth;
                 }
 
                 if (ComputedStyles.Count > i)
@@ -195,7 +196,7 @@ namespace RelaUI.Components
                     ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings, i));
                 }
 
-                if (Centered && Initialized)
+                if ((Centered || RightAligned) && Initialized)
                     LineWidths.Add(GetTextWidth(i));
             }
             if (TextStyler != null)
