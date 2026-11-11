@@ -59,8 +59,18 @@ namespace RelaUI.Helpers
 
         public bool PreventChildFocus(float dx, float dy, InputManager input)
         {
-            // check for scrollbars 
-            return UpdateScrolling(0, input);
+            // check for scrollbars, but only act on a fresh click
+            if (input.MousePressed(eMouseButtons.Left))
+                return UpdateScrolling(0, input);
+
+            if (!input.MouseDown(eMouseButtons.Left))
+            {
+                WasScrollingHorz = false;
+                WasScrollingVert = false;
+                IsDragScrolling = false;
+            }
+
+            return false;
         }
 
         public bool SelfGetFocus(float elapsedms, InputManager input)
