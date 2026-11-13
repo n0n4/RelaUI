@@ -177,9 +177,9 @@ namespace RelaUI
                     else
                     {
                         if (font.IsDynamic)
-                            s.DrawString(font.DFont, "" + letter, new Vector2(x + sum, y), c);
+                            s.DrawString(font.DFont, TextHelper.GetCharToString(letter), new Vector2(x + sum, y), c);
                         else
-                            s.DrawString(font.SFont, "" + letter, new Vector2(x + sum, y), c);
+                            s.DrawString(font.SFont, TextHelper.GetCharToString(letter), new Vector2(x + sum, y), c);
                         sum += monosize;
                     }
                 }
