@@ -173,7 +173,7 @@ namespace RelaUI.Text
         public static int DetermineHeightFromWidth(RelaFont font, RenderedText rendered, TextSettings settings, int width, bool splitwords = false)
         {
             string text = rendered.Render(font);
-            List<string> TextLines = TextHelper.FitToBox(font, text, width, 0, settings, splitwords);
+            List<string> TextLines = FitToBox(font, rendered, width, 0, settings, splitwords);
             return TextLines.Count * GetHeight(font, text, settings);
         }
 
@@ -201,15 +201,26 @@ namespace RelaUI.Text
         public static List<string> FitToBox(RelaFont font, RenderedText render, int w, int h, TextSettings settings, bool splitwords = false)
         {
             string text = render.Render(font);
-            return FitToBox(font, text, w, h, settings, splitwords);
-        }
-        private static List<string> FitToBox(RelaFont font, string text, int w, int h, TextSettings settings, bool splitwords = false)
-        {
             List<string> outs = new List<string>();
+            FitToBox(font, text, w, h, settings, outs, splitwords);
+            return outs;
+        }
+
+        public static void FitToBox(RelaFont font, RenderedText render, int w, int h, TextSettings settings,
+            List<string> output, bool splitwords = false)
+        {
+            string text = render.Render(font);
+            FitToBox(font, text, w, h, settings, output, splitwords);
+        }
+
+        private static void FitToBox(RelaFont font, string text, int w, int h, TextSettings settings,
+            List<string> outs, bool splitwords = false)
+        {
+            outs.Clear();
             if (text.Length <= 1)
             {
                 outs.Add(text);
-                return outs;
+                return;
             }
             int currentwidth = 0;
             int cstart = 0;
@@ -232,11 +243,13 @@ namespace RelaUI.Text
                 {
                     if (char.IsHighSurrogate(text[c]))
                     {
-                        check = text.Substring(c, 2);
+                        check = c + 1 < text.Length
+                            ? GetSurrogatesToString(text[c], text[c + 1])
+                            : GetCharToString(text[c]);
                     }
                     else
                     {
-                        check = text.Substring(c, 1);
+                        check = GetCharToString(text[c]);
                     }
                     if (check[0] == '\t')
                     {
@@ -304,7 +317,6 @@ namespace RelaUI.Text
                 c++;
             }
             outs.Add(text.Substring(cstart));
-            return outs;
         }
 
         public static string GetCharToString(char c)

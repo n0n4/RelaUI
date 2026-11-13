@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RelaUI.DrawHandles;
 using RelaUI.Input;
@@ -82,7 +82,7 @@ namespace RelaUI.Components
         {
             if (SFont == null)
                 return;
-            TextLines = TextHelper.FitToBox(SFont, RenderedText, Width, Height, FontSettings, TextSplitWords);
+            TextHelper.FitToBox(SFont, RenderedText, Width, Height, FontSettings, TextLines, TextSplitWords);
 
             if (TextOneLineOnly)
             {

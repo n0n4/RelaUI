@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using RelaUI.Input;
 using RelaUI.Text;
@@ -164,7 +164,7 @@ namespace RelaUI.Components
 
         public void ProcessText()
         {
-            TextLines = TextHelper.FitToBox(SFont, RenderedText, Width, Height, FontSettings, TextSplitWords);
+            TextHelper.FitToBox(SFont, RenderedText, Width, Height, FontSettings, TextLines, TextSplitWords);
             while (TextLines.Count * SFont.LineSpacing > Height)
             {
                 TextLines.RemoveAt(TextLines.Count - 1);
