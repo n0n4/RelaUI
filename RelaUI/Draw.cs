@@ -89,6 +89,7 @@ namespace RelaUI
             DrawString(g, s, font, text, x, y, settings.Color, settings.Monospaced, settings.MonospaceSize, settings.TabWidth, prevTabSum);
         }
 
+        // todo: deprecate this; allocates per frame
         public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, float dx, float dy, string text,
             List<TextSettings> settingsStyles, List<int> styleSwitchIndices, List<int> styleSwitchStyles, List<RelaFont> fonts,
             List<UIComponent> innerComponents, List<int> componentIndices)
@@ -148,8 +149,44 @@ namespace RelaUI
         public static void DrawTextMultiStyles(GraphicsDevice g, SpriteBatch s, float x, float y, float dx, float dy, string text,
             TextStyles styles)
         {
-            DrawTextMultiStyles(g, s, x, y, dx, dy, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts,
-                styles.InnerComponents, styles.ComponentIndices);
+            List<string> chunks = styles.GetChunks(text);
+            int totalWidth = 0;
+            int compNumber = 0;
+            int nextCompIndex = -1;
+            if (styles.ComponentIndices != null && styles.ComponentIndices.Count > 0)
+                nextCompIndex = styles.ComponentIndices[0];
+
+            for (int styleIndex = 0; styleIndex < styles.StyleSwitchIndices.Count; styleIndex++)
+            {
+                int pos = styles.StyleSwitchIndices[styleIndex];
+                if (pos >= text.Length)
+                    continue; // skip this pos, it's out of bounds
+                int style = styles.StyleSwitchStyles[styleIndex];
+                TextSettings settings = styles.Styles[style];
+                RelaFont font = styles.Fonts[style];
+                if (font == null || settings == null)
+                    continue; // don't render null styles
+
+                while (nextCompIndex == pos)
+                {
+                    // render internal components
+                    UIComponent nextComp = styles.InnerComponents[compNumber];
+                    nextComp.x = totalWidth + x - dx;
+                    nextComp.y = y - dy;
+                    totalWidth += nextComp.GetWidth();
+                    compNumber++;
+                    nextCompIndex = -1;
+                    if (styles.ComponentIndices.Count > compNumber)
+                        nextCompIndex = styles.ComponentIndices[compNumber];
+                }
+
+                string subtext = chunks[styleIndex];
+                if (subtext == null)
+                    continue; // this position is empty
+
+                DrawText(g, s, font, totalWidth + x, y, subtext, settings, totalWidth);
+                totalWidth += styles.GetChunkWidth(styleIndex, font, settings, totalWidth);
+            }
         }
 
         public static void DrawString(GraphicsDevice g, SpriteBatch s, RelaFont font, string text, float x, float y, Color c,

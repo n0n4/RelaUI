@@ -43,7 +43,7 @@ namespace RelaUI.Sampler.Screens
                 "l:str.f:commaand(v:s) // a, b, and c");
             AddTab("blank.rela", "");
 
-            UIButton ReturnButton = new UIButton(0, 0, 50, 50, "Back", fontsize: 20);
+            UIButton ReturnButton = new UIButton(0, 0, 50, 25, "Back", fontsize: 20);
             Panel.Add(ReturnButton);
             ReturnButton.EventFocused += (sender, args) =>
             {

@@ -115,6 +115,7 @@ namespace RelaUI.Components
 
         private ITextStyler TextStyler = null;
         private List<TextStyles> ComputedStyles = new List<TextStyles>();
+        private TextStyles AdjustedStyles = null;
         private bool SkipNextCompute = false;
 
         public bool MultiLine = false;
@@ -314,7 +315,8 @@ namespace RelaUI.Components
                         tend = TEndAtStartOfScrolling;
                     }
 
-                    TextStyles adjustedStyles = ComputedStyles[0].Adjust(tstart);
+                    AdjustedStyles = ComputedStyles[0].Adjust(tstart, AdjustedStyles);
+                    TextStyles adjustedStyles = AdjustedStyles;
 
                     if (Highlighting)
                     {
@@ -1060,7 +1062,8 @@ namespace RelaUI.Components
                         }
 
                         // if mouse is inside our box, figure out where and place caret appropriately
-                        CaretPosition = TStartAtStartOfScrolling + DeterminePositionWithinLine(RenderedText, (int)(mx - Lastdx - BorderWidth), ComputedStyles[0].Adjust(TStartAtStartOfScrolling), TStartAtStartOfScrolling);
+                        AdjustedStyles = ComputedStyles[0].Adjust(TStartAtStartOfScrolling, AdjustedStyles);
+                        CaretPosition = TStartAtStartOfScrolling + DeterminePositionWithinLine(RenderedText, (int)(mx - Lastdx - BorderWidth), AdjustedStyles, TStartAtStartOfScrolling);
 
                         // continue highlighting
                         if (MouseWasDown && Highlighting)

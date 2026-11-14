@@ -154,8 +154,50 @@ namespace RelaUI.Text
         public static int GetWidthMultiStylesUnsafe(RelaFont font, string text,
             TextStyles styles, int? start = null, int? length = null)
         {
+            if (start == null && length == null)
+                return GetWidthMultiStylesUnsafeCached(font, text, styles);
+
             return GetWidthMultiStylesUnsafe(font, text, styles.Styles, styles.StyleSwitchIndices, styles.StyleSwitchStyles, styles.Fonts,
                 styles.InnerComponents, styles.ComponentIndices, start, length);
+        }
+
+        private static int GetWidthMultiStylesUnsafeCached(RelaFont font, string text, TextStyles styles)
+        {
+            List<string> chunks = styles.GetChunks(text);
+            int totalWidth = 0;
+            int compNumber = 0;
+            int nextCompIndex = -1;
+            if (styles.ComponentIndices != null && styles.ComponentIndices.Count > 0)
+                nextCompIndex = styles.ComponentIndices[0];
+
+            for (int styleIndex = 0; styleIndex < styles.StyleSwitchIndices.Count; styleIndex++)
+            {
+                int pos = styles.StyleSwitchIndices[styleIndex];
+                if (pos >= text.Length)
+                    continue;
+                int style = styles.StyleSwitchStyles[styleIndex];
+                TextSettings settings = styles.Styles[style];
+                RelaFont subfont = styles.Fonts[style];
+                if (subfont == null || settings == null)
+                    continue;
+
+                while (nextCompIndex == pos)
+                {
+                    UIComponent nextComp = styles.InnerComponents[compNumber];
+                    totalWidth += nextComp.GetWidth();
+                    compNumber++;
+                    nextCompIndex = -1;
+                    if (styles.ComponentIndices.Count > compNumber)
+                        nextCompIndex = styles.ComponentIndices[compNumber];
+                }
+
+                string subtext = chunks[styleIndex];
+                if (subtext == null)
+                    continue;
+
+                totalWidth += styles.GetChunkWidth(styleIndex, subfont, settings, totalWidth);
+            }
+            return totalWidth;
         }
 
         public static int GetHeight(RelaFont font, RenderedText rendered, TextSettings settings)

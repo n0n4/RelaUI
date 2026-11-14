@@ -153,7 +153,7 @@ namespace RelaUI.Sampler.Screens
             multiLineText.SetTextStyler(new TextStylerTest());
             panel9.Add(multiLineText);
 
-            UIButton ReturnButton = new UIButton(0, 0, 50, 50, "Back", fontsize: 20);
+            UIButton ReturnButton = new UIButton(0, 0, 50, 25, "Back", fontsize: 20);
             Panel.Add(ReturnButton);
             ReturnButton.EventFocused += (sender, args) =>
             {

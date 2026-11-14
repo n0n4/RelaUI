@@ -38,7 +38,7 @@ namespace RelaUI.Sampler.Screens
 加盟国は、国際連合と協力し");
             AddTab("test 2", @"check this out: 人類社会のすべての構成員の固有の尊厳と平等で譲ることのできない権利とを承認することは);");
 
-            UIButton ReturnButton = new UIButton(0, 0, 50, 50, "Back", fontsize: 20);
+            UIButton ReturnButton = new UIButton(0, 0, 50, 25, "Back", fontsize: 20);
             Panel.Add(ReturnButton);
             ReturnButton.EventFocused += (sender, args) =>
             {

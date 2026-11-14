@@ -166,22 +166,32 @@ namespace RelaUI.Components
             if (SFont == null)
                 return;
 
-            ComputedStyles.Clear();
+            if (ComputedStyles.Count > TextLines.Count)
+                ComputedStyles.RemoveRange(TextLines.Count, ComputedStyles.Count - TextLines.Count);
 
             if (TextStyler != null)
                 TextStyler.PreStyling();
             for (int i = 0; i < TextLines.Count; i++)
             {
+                TextStyles styles;
                 if (TextStyler == null || TextLines[i].Length <= 0)
                 {
                     DefaultTextStyles.Styles[0] = FontSettings;
                     DefaultTextStyles.Fonts[0] = SFont;
-                    ComputedStyles.Add(DefaultTextStyles);
+                    styles = DefaultTextStyles;
                 }
                 else
                 {
-                    ComputedStyles.Add(TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings, i));
+                    TextStyles existing = i < ComputedStyles.Count && !ReferenceEquals(ComputedStyles[i], DefaultTextStyles)
+                        ? ComputedStyles[i]
+                        : null;
+                    styles = TextStyler.GetTextStyles(SFont, TextLines[i], FontSettings, i, existing);
                 }
+
+                if (i < ComputedStyles.Count)
+                    ComputedStyles[i] = styles;
+                else
+                    ComputedStyles.Add(styles);
             }
             if (TextStyler != null)
                 TextStyler.PostStyling();
