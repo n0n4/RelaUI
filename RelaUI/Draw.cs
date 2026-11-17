@@ -190,11 +190,14 @@ namespace RelaUI
         }
 
         public static void DrawString(GraphicsDevice g, SpriteBatch s, RelaFont font, string text, float x, float y, Color c,
-            bool monospaced, int monosize, int tabWidth, int prevTabSum = 0)
+            bool monospaced, int monosize, int tabWidth, int prevTabSum = 0, bool tabless = false)
         {
             if (!monospaced)
             {
-                text = text.Replace("\t", TextHelper.Tab);
+                // TODO: really ought to be caching prepared strings (i.e. tabs already replaced)
+                // profiling shows it's not a major issue but it feels wrong to do this
+                if (!tabless)
+                    text = text.Replace("\t", TextHelper.Tab);
                 if (font.IsDynamic)
                     s.DrawString(font.DFont, text, new Vector2(x, y), c);
                 else
