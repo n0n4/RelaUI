@@ -52,6 +52,23 @@ namespace RelaUI.Components
             this.EventFocused += (sender, e) =>
             {
                 PopupPanel.Visible = true;
+
+                // bring the popup to the front so it stays above re-added screen panels
+                // this is like when we switch back and forth between screens, the dropdown
+                // panels could become hidden beneath other elements
+                if (PopupPanel.System != null)
+                {
+                    UISystem system = PopupPanel.System;
+                    system.Remove(PopupPanel);
+                    system.Add(PopupPanel);
+                }
+                else if (PopupPanel.Parent != null)
+                {
+                    UIComponent parent = PopupPanel.Parent;
+                    parent.Remove(PopupPanel);
+                    parent.Add(PopupPanel);
+                    PopupPanel.TryInit();
+                }
             };
 
             this.EventFocusLost += (sender, e) =>
