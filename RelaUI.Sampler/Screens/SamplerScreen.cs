@@ -1,5 +1,6 @@
 ﻿using RelaUI.Basics.Stylers;
 using RelaUI.Components;
+using RelaUI.Components.FileSelector;
 using RelaUI.Dialogs;
 using RelaUI.Profiles;
 using RelaUI.Text;
@@ -16,6 +17,7 @@ namespace RelaUI.Sampler.Screens
         public UIPanel Panel;
 
         private TestUI Main;
+        private FileSelectorComponent FileSelector;
 
         public SamplerScreen(TestUI main)
         {
@@ -134,13 +136,19 @@ namespace RelaUI.Sampler.Screens
             };
             filebtn.EventFocused += (sender, args) =>
             {
-                UIComponent.EventFocusedHandlerArgs eargs = args as UIComponent.EventFocusedHandlerArgs;
-                DialogFile filepopup = new DialogFile(DialogFile.eMode.SELECT_FILE, ".\\", "file.txt", "Select a File");
-                filepopup.Popup(main.UISystem);
-                filepopup.EventClosed += (innersender, innerargs) =>
+                FileSelector.Open(new FileSelectorOptions()
                 {
-                    filepopup.Dispose();
-                };
+                    Mode = FileSelectorMode.SelectFile,
+                    StartFolder = ".\\",
+                    DefaultFileName = "file.txt",
+                    Title = "Select a File"
+                });
+            };
+
+            FileSelector = new FileSelectorComponent();
+            FileSelector.Closed += result =>
+            {
+                System.Console.WriteLine(result.Confirmed ? "Selected: " + result.Path : "Cancelled");
             };
 
             // panel 9
@@ -159,6 +167,9 @@ namespace RelaUI.Sampler.Screens
             {
                 Main.Load(Main.HomeScreen);
             };
+
+            // file selector needs to be last so it shows up on top
+            Panel.Add(FileSelector);
         }
 
         public void Resize(int newW, int newH)
@@ -167,6 +178,7 @@ namespace RelaUI.Sampler.Screens
             Panel.Height = newH;
 
             // resizable components should be updated here
+            FileSelector?.CenterInParent();
 
             // reinit if appropriate
             Panel.TryInit();
