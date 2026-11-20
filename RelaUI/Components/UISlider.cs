@@ -89,6 +89,8 @@ namespace RelaUI.Components
 
         public override bool PreventChildFocus(float dx, float dy, InputManager input)
         {
+            LastDx = dx;
+            LastDy = dy;
             return true;
         }
 

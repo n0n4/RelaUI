@@ -68,15 +68,22 @@ namespace RelaUI.Components.FileSelector
             Visible = false;
             LockFocus = false;
             InnerMargin = 0;
+            AutomationId = "file-selector";
             Build();
         }
 
         private void Build()
         {
-            TitleLabel = new UILabel(10, 8, Width - 20, 10, string.Empty, fontsize: 20, autoheight: true);
+            TitleLabel = new UILabel(10, 8, Width - 20, 10, string.Empty, fontsize: 20, autoheight: true)
+            {
+                AutomationId = "file-selector-title"
+            };
             Add(TitleLabel);
 
-            FolderText = new UITextField(10, 40, Width - 90, 30, string.Empty, fontsize: 14, autoheight: false);
+            FolderText = new UITextField(10, 40, Width - 90, 30, string.Empty, fontsize: 14, autoheight: false)
+            {
+                AutomationId = "file-selector-folder"
+            };
             FolderText.EventEnterPressed += (sender, args) =>
             {
                 UITextField.EventEnterPressedHandlerArgs eargs = args as UITextField.EventEnterPressedHandlerArgs;
@@ -84,22 +91,32 @@ namespace RelaUI.Components.FileSelector
             };
             Add(FolderText);
 
-            UpButton = new UIButton(Width - 70, 40, 50, 30, "Up", fontsize: 14);
+            UpButton = new UIButton(Width - 70, 40, 50, 30, "Up", fontsize: 14)
+            {
+                AutomationId = "file-selector-up"
+            };
             UpButton.EventFocused += (sender, args) => GoUp();
             Add(UpButton);
 
             FileListPanel = new UIPanel(10, 78, Width - 20, Height - 198, hasscrolling: true)
             {
                 HasBorder = false,
-                InnerMargin = 2
+                InnerMargin = 2,
+                AutomationId = "file-selector-list"
             };
             Add(FileListPanel);
 
-            FileText = new UITextField(10, Height - 90, Width - 20, 30, string.Empty, fontsize: 14, autoheight: false);
+            FileText = new UITextField(10, Height - 90, Width - 20, 30, string.Empty, fontsize: 14, autoheight: false)
+            {
+                AutomationId = "file-selector-file"
+            };
             FileText.EventEnterPressed += (sender, args) => Confirm();
             Add(FileText);
 
-            ErrorLabel = new UILabel(10, Height - 114, Width - 20, 20, string.Empty, fontsize: 12, autoheight: false);
+            ErrorLabel = new UILabel(10, Height - 114, Width - 20, 20, string.Empty, fontsize: 12, autoheight: false)
+            {
+                AutomationId = "file-selector-error"
+            };
             ErrorLabel.Visible = false;
             ErrorLabel.EventPostInit += (sender, args) =>
             {
@@ -108,15 +125,24 @@ namespace RelaUI.Components.FileSelector
             };
             Add(ErrorLabel);
 
-            NewFolderButton = new UIButton(10, Height - 50, 100, 32, "New Folder", fontsize: 14);
+            NewFolderButton = new UIButton(10, Height - 50, 100, 32, "New Folder", fontsize: 14)
+            {
+                AutomationId = "file-selector-new-folder"
+            };
             NewFolderButton.EventFocused += (sender, args) => ShowNewFolder();
             Add(NewFolderButton);
 
-            SelectButton = new UIButton(120, Height - 50, 100, 32, "Select", fontsize: 14);
+            SelectButton = new UIButton(120, Height - 50, 100, 32, "Select", fontsize: 14)
+            {
+                AutomationId = "file-selector-select"
+            };
             SelectButton.EventFocused += (sender, args) => Confirm();
             Add(SelectButton);
 
-            CancelButton = new UIButton(Width - 110, Height - 50, 100, 32, "Cancel", fontsize: 14);
+            CancelButton = new UIButton(Width - 110, Height - 50, 100, 32, "Cancel", fontsize: 14)
+            {
+                AutomationId = "file-selector-cancel"
+            };
             CancelButton.EventFocused += (sender, args) => Cancel();
             Add(CancelButton);
 
@@ -127,7 +153,10 @@ namespace RelaUI.Components.FileSelector
 
         private void BuildNewFolderPanel()
         {
-            NewFolderPanel = new UIPanel(0, 0, 320, 160);
+            NewFolderPanel = new UIPanel(0, 0, 320, 160)
+            {
+                AutomationId = "file-selector-new-folder-panel"
+            };
             NewFolderPanel.Visible = false;
             NewFolderPanel.LockFocus = false;
             Add(NewFolderPanel);
@@ -139,36 +168,57 @@ namespace RelaUI.Components.FileSelector
             NewFolderPanel.Add(NewFolderPromptLabel);
 
             NewFolderText = new UITextField(10, 64, 300, 30, string.Empty, fontsize: 14, autoheight: false,
-                placeholdertext: "Folder Name...");
+                placeholdertext: "Folder Name...")
+            {
+                AutomationId = "file-selector-new-folder-name"
+            };
             NewFolderText.EventEnterPressed += (sender, args) => CreateFolder();
             NewFolderPanel.Add(NewFolderText);
 
-            NewFolderCreateButton = new UIButton(10, 112, 120, 32, "Create", fontsize: 14);
+            NewFolderCreateButton = new UIButton(10, 112, 120, 32, "Create", fontsize: 14)
+            {
+                AutomationId = "file-selector-new-folder-create"
+            };
             NewFolderCreateButton.EventFocused += (sender, args) => CreateFolder();
             NewFolderPanel.Add(NewFolderCreateButton);
 
-            NewFolderCancelButton = new UIButton(170, 112, 120, 32, "Cancel", fontsize: 14);
+            NewFolderCancelButton = new UIButton(170, 112, 120, 32, "Cancel", fontsize: 14)
+            {
+                AutomationId = "file-selector-new-folder-cancel"
+            };
             NewFolderCancelButton.EventFocused += (sender, args) => HideNewFolder();
             NewFolderPanel.Add(NewFolderCancelButton);
         }
 
         private void BuildOverwritePanel()
         {
-            OverwritePanel = new UIPanel(0, 0, 400, 176, hastitle: true, title: string.Empty, titlesize: 16);
+            OverwritePanel = new UIPanel(0, 0, 400, 176, hastitle: true, title: string.Empty, titlesize: 16)
+            {
+                AutomationId = "file-selector-overwrite-panel"
+            };
             OverwritePanel.Visible = false;
             OverwritePanel.LockFocus = false;
             Add(OverwritePanel);
 
-            OverwriteLabel = new UILabel(10, 15, 380, 70, string.Empty, fontsize: 14, autoheight: false);
+            OverwriteLabel = new UILabel(10, 15, 380, 70, string.Empty, fontsize: 14, autoheight: false)
+            {
+                AutomationId = "file-selector-overwrite-label"
+            };
             OverwriteLabel.Centered = true;
             OverwriteLabel.TextSplitWords = true;
             OverwritePanel.Add(OverwriteLabel);
 
-            OverwriteYesButton = new UIButton(40, 118, 120, 32, "Yes", fontsize: 14);
+            OverwriteYesButton = new UIButton(40, 118, 120, 32, "Yes", fontsize: 14)
+            {
+                AutomationId = "file-selector-overwrite-yes"
+            };
             OverwriteYesButton.EventFocused += (sender, args) => ConfirmOverwrite();
             OverwritePanel.Add(OverwriteYesButton);
 
-            OverwriteNoButton = new UIButton(240, 118, 120, 32, "No", fontsize: 14);
+            OverwriteNoButton = new UIButton(240, 118, 120, 32, "No", fontsize: 14)
+            {
+                AutomationId = "file-selector-overwrite-no"
+            };
             OverwriteNoButton.EventFocused += (sender, args) => HideOverwrite();
             OverwritePanel.Add(OverwriteNoButton);
         }
@@ -486,7 +536,8 @@ namespace RelaUI.Components.FileSelector
                 UIButton row = new UIButton(0, 0, FileListPanel.Width - 10, RowHeight,
                     entry.IsDirectory ? entry.Name + "/" : entry.Name, fontsize: 14)
                 {
-                    Justified = eUIJustify.LEFT
+                    Justified = eUIJustify.LEFT,
+                    AutomationId = "file-entry:" + entry.Name
                 };
                 row.EventPostInit += (sender, args) =>
                 {
