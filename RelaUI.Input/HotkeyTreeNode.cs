@@ -23,7 +23,7 @@ namespace RelaUI.Input
             }
 
             foreach (HotkeyTreeNode node in Nodes.Values)
-                Unregister(name, source);
+                node.Unregister(name, source);
         }
 
         public void Destroy()

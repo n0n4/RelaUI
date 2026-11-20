@@ -21,10 +21,21 @@ namespace RelaUI.Input
         public int FreshKeysCount = 0;
         
         public InputState()
+            : this(Keyboard.GetState(), Microsoft.Xna.Framework.Input.Mouse.GetState())
         {
-            Keys = Keyboard.GetState();
-            Mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
-            MousePos = Mouse.Position;
+        }
+
+        public InputState(KeyboardState keys, MouseState mouse)
+        {
+            Keys = keys;
+            Mouse = mouse;
+            MousePos = mouse.Position;
+        }
+
+        // for automation testing, an input state that is decoupled from the actual (like, physical) keyboard/mouse state
+        public static InputState CreateEmpty()
+        {
+            return new InputState(new KeyboardState(), new MouseState());
         }
 
         public void CopyFrom(InputState state)

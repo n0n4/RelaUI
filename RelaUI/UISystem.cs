@@ -17,11 +17,17 @@ namespace RelaUI
 
         public GraphicsDevice GraphicsDevice;
 
+        public UISystem()
+        {
+        }
+
         public UISystem(GraphicsDevice graphics)
+            : this()
         {
             GraphicsDevice = graphics;
 
-            DrawHandleStatic.Setup(graphics);
+            if (graphics != null)
+                DrawHandleStatic.Setup(graphics);
         }
 
         public void Add(UIComponent child)
@@ -116,9 +122,9 @@ namespace RelaUI
             {
                 if (disposing)
                 {
-                    foreach (UIComponent u in Components)
+                    for (int i = Components.Count - 1; i >= 0; i--)
                     {
-                        u.Dispose();
+                        Components[i].Dispose();
                     }
                 }
 

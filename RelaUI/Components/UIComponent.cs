@@ -15,6 +15,10 @@ namespace RelaUI.Components
         public UISystem System = null;
         public UIStyle Style = null;
 
+        // for automation testing, to be able to find components more easily
+        // not needed outside of testing purposes
+        public string AutomationId = string.Empty;
+
         public float x = 0;
         public float y = 0;
 
@@ -536,7 +540,7 @@ namespace RelaUI.Components
                     {
                         System.Remove(this);
                     }
-                    for (int i = 0; i < Components.Count; i++)
+                    for (int i = Components.Count - 1; i >= 0; i--)
                     {
                         Components[i].Dispose();
                     }

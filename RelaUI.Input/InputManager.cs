@@ -15,8 +15,8 @@ namespace RelaUI.Input
 
     public class InputManager
     {
-        public InputState State = new InputState();
-        public InputState LastState = new InputState();
+        public InputState State;
+        public InputState LastState;
 
         public float KeyRepeatTimeMS = 500;
         public float KeyRepeatIntervalMS = 50;
@@ -32,8 +32,21 @@ namespace RelaUI.Input
         public bool MouseScrollCaptured = false;
 
         public InputManager(CursorManager cursorManager)
+            : this(cursorManager, new InputState(), new InputState())
+        {
+        }
+
+        public InputManager(CursorManager cursorManager, InputState state, InputState lastState)
         {
             Cursor = cursorManager;
+            State = state;
+            LastState = lastState;
+        }
+
+        // for automation testing, input manager that is separate from the actual keyboard/mouse state 
+        public static InputManager CreateHeadless(CursorManager cursorManager)
+        {
+            return new InputManager(cursorManager, InputState.CreateEmpty(), InputState.CreateEmpty());
         }
 
         public void Render(GraphicsDevice g, SpriteBatch sb)
@@ -47,9 +60,14 @@ namespace RelaUI.Input
 
         public void Update(float elapsedms)
         {
+            Update(elapsedms, Keyboard.GetState(), Mouse.GetState());
+        }
+
+        public void Update(float elapsedms, KeyboardState keyboard, MouseState mouse)
+        {
             MouseScrollCaptured = false;
             InputCapturedCount = 0;
-            State.Load(LastState, Keyboard.GetState(), Mouse.GetState(), elapsedms, KeyRepeatTimeMS, KeyRepeatIntervalMS);
+            State.Load(LastState, keyboard, mouse, elapsedms, KeyRepeatTimeMS, KeyRepeatIntervalMS);
         }
 
         // to be called after all components have updated

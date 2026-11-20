@@ -86,7 +86,7 @@ namespace RelaUI.Input
         {
             // note if name passed in is string.empty, all hotkeys from [source] will be removed
             foreach (HotkeyTreeNode node in StrokeTree.Values)
-                Unregister(name, source);
+                node.Unregister(name, source);
         }
 
         public HotkeySave FindInProfile(string name, string source)
