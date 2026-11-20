@@ -10,7 +10,8 @@ namespace RelaUI.Input
     public enum eMouseButtons
     {
         Left,
-        Right
+        Right,
+        Middle
     }
 
     public class InputManager
@@ -30,6 +31,9 @@ namespace RelaUI.Input
         public int InputUncapturedCount = 0;
 
         public bool MouseScrollCaptured = false;
+
+        // synthetic text from automation, not actual typing
+        public string TextInput = string.Empty;
 
         public InputManager(CursorManager cursorManager)
             : this(cursorManager, new InputState(), new InputState())
@@ -250,6 +254,18 @@ namespace RelaUI.Input
             
             bool shift = ShiftDown();
             int count = 0;
+
+            if (!string.IsNullOrEmpty(TextInput))
+            {
+                orders[count] = new WritingOrder()
+                {
+                    Add = TextInput,
+                    Order = eWritingOrder.ADD
+                };
+                count++;
+                TextInput = string.Empty;
+            }
+
             Keys k;
             for (int i = 0; i < State.FreshKeysCount; i++)
             {
@@ -394,6 +410,8 @@ namespace RelaUI.Input
                     return State.Mouse.LeftButton == ButtonState.Pressed;
                 case eMouseButtons.Right:
                     return State.Mouse.RightButton == ButtonState.Pressed;
+                case eMouseButtons.Middle:
+                    return State.Mouse.MiddleButton == ButtonState.Pressed;
                 default:
                     return false;
             }
@@ -409,6 +427,9 @@ namespace RelaUI.Input
                 case eMouseButtons.Right:
                     return State.Mouse.RightButton == ButtonState.Pressed
                         && LastState.Mouse.RightButton == ButtonState.Released;
+                case eMouseButtons.Middle:
+                    return State.Mouse.MiddleButton == ButtonState.Pressed
+                        && LastState.Mouse.MiddleButton == ButtonState.Released;
                 default:
                     return false;
             }
@@ -424,6 +445,9 @@ namespace RelaUI.Input
                 case eMouseButtons.Right:
                     return LastState.Mouse.RightButton == ButtonState.Pressed
                         && State.Mouse.RightButton == ButtonState.Released;
+                case eMouseButtons.Middle:
+                    return LastState.Mouse.MiddleButton == ButtonState.Pressed
+                        && State.Mouse.MiddleButton == ButtonState.Released;
                 default:
                     return false;
             }
