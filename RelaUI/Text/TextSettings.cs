@@ -12,6 +12,7 @@ namespace RelaUI.Text
         public Color Color;
         public string FontName = string.Empty;
         public int FontSize = 0;
+        public string? FontRole; // custom tag for font classification
         public bool HasShadow = false;
         public Color ShadowColor;
         public int ShadowDepth;
